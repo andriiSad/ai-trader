@@ -127,7 +127,7 @@ GitHub Actions enforces CI on every PR to `main`. **PRs cannot merge if CI fails
 
 - **Required status checks**: `test-scraper (3.12)`, `test-scraper (3.13)`, `test-scraper (3.14)`, `lint`
 - **Strict mode**: branches must be up-to-date before merge
-- **PR review**: 1 approving review required
+- **No review required**: solo developer — CI gates merge
 - **Enforce on admins**: yes, no exceptions
 
 ### Local Commands
@@ -154,5 +154,24 @@ make install-scraper
 1. **Never push if tests fail locally** — run `make test` first
 2. **Never push if lint fails** — run `make lint` and `make format` first
 3. **CI must pass before merge** — no exceptions, no force-merging
-4. **1 approving review required** — @andriiSad must approve
+4. **Agent auto-merges** when CI passes: `gh pr merge {N} --merge`
 5. **New projects must add their own test job** to `.github/workflows/test.yml`
+
+### Agent PR Workflow
+
+```
+Agent pushes branch
+  → gh pr create
+    → CI runs (tests + lint)
+      → Agent monitors: gh pr checks {N}
+        → All pass → Agent merges
+        → Fail → fix, push, repeat
+```
+
+### Human Gate (Phase 9)
+
+After agent creates PR and code review, it STOPS. User:
+1. `gh pr checkout {N}` — get PR branch locally
+2. Runs code manually — `make test`, run the script, verify it works
+3. Reads code review comments on PR
+4. Responds: "approve" → agent merges, or "change X" → agent fixes and loops
