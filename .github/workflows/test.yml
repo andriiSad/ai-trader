@@ -22,7 +22,6 @@ jobs:
 
   test-scraper:
     needs: detect-changes
-    if: needs.detect-changes.outputs.scraper == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     strategy:
       matrix:
