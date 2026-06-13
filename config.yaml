@@ -1,0 +1,17 @@
+pairs:
+  - BTC_USDT
+  - ETH_USDT
+
+intervals:
+  - 1m
+  - 5m
+  - 15m
+  - 1h
+
+output_dir: data
+
+# null = 30 days ago (only used by backfill when no prior data exists)
+start_date: null
+
+backfill_chunk_size: 500
+backfill_delay: 0.5
