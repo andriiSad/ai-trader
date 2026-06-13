@@ -1,19 +1,16 @@
-import asyncio
 import json
 import logging
 import time
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
-from websockets.exceptions import ConnectionClosed
-
 from scraper import (
     CSV_HEADER,
     LiveCollector,
     ensure_csv,
     get_csv_path,
-    get_last_timestamp,
 )
+from websockets.exceptions import ConnectionClosed
 
 
 class MockAsyncIterator:
@@ -57,11 +54,13 @@ class MockWS:
 
 
 def candle_msg(pair, ts):
-    return json.dumps({
-        "id": None,
-        "method": "candles_update",
-        "params": [[ts, "100", "100", "105", "95", "10", "1000", pair]],
-    })
+    return json.dumps(
+        {
+            "id": None,
+            "method": "candles_update",
+            "params": [[ts, "100", "100", "105", "95", "10", "1000", pair]],
+        }
+    )
 
 
 @pytest.fixture
@@ -120,9 +119,7 @@ async def test_reconnect_on_connection_error(collector):
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            return MockWS(
-                messages=[], raise_on_iter=ConnectionError("first"), collector=None
-            )
+            return MockWS(messages=[], raise_on_iter=ConnectionError("first"), collector=None)
         return MockWS(
             messages=[],
             raise_on_iter=ConnectionError("second"),
@@ -184,9 +181,9 @@ async def test_connection_closed_logs_warning(collector, caplog):
     with (
         patch("scraper.websockets.connect", side_effect=lambda *a, **k: make_ws()),
         patch("scraper.RECONNECT_DELAY", 0),
+        caplog.at_level(logging.WARNING),
     ):
-        with caplog.at_level(logging.WARNING):
-            await collector._stream_interval("1m")
+        await collector._stream_interval("1m")
 
     assert any("Connection lost" in r.message for r in caplog.records)
 
@@ -194,16 +191,14 @@ async def test_connection_closed_logs_warning(collector, caplog):
 @pytest.mark.asyncio
 async def test_connection_error_logs_warning(collector, caplog):
     def make_ws():
-        return MockWS(
-            messages=[], raise_on_iter=ConnectionError("test"), collector=collector
-        )
+        return MockWS(messages=[], raise_on_iter=ConnectionError("test"), collector=collector)
 
     with (
         patch("scraper.websockets.connect", side_effect=lambda *a, **k: make_ws()),
         patch("scraper.RECONNECT_DELAY", 0),
+        caplog.at_level(logging.WARNING),
     ):
-        with caplog.at_level(logging.WARNING):
-            await collector._stream_interval("1m")
+        await collector._stream_interval("1m")
 
     assert any("Connection lost" in r.message for r in caplog.records)
 
@@ -220,9 +215,9 @@ async def test_unexpected_exception_logs_error(collector, caplog):
     with (
         patch("scraper.websockets.connect", side_effect=lambda *a, **k: make_ws()),
         patch("scraper.RECONNECT_DELAY", 0),
+        caplog.at_level(logging.ERROR),
     ):
-        with caplog.at_level(logging.ERROR):
-            await collector._stream_interval("1m")
+        await collector._stream_interval("1m")
 
     assert any("Unexpected error" in r.message for r in caplog.records)
 
@@ -239,9 +234,7 @@ async def test_reconnect_resubscribes_to_all_pairs(collector):
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            return MockWS(
-                messages=[], raise_on_iter=ConnectionError("first"), collector=None
-            )
+            return MockWS(messages=[], raise_on_iter=ConnectionError("first"), collector=None)
         ws = MockWS(messages=[], collector=collector)
         all_sent.append(ws.sent)
         return ws
@@ -272,9 +265,7 @@ async def test_refresh_last_ts_map_on_reconnect(collector, tmp_path):
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            return MockWS(
-                messages=[], raise_on_iter=ConnectionError("first"), collector=None
-            )
+            return MockWS(messages=[], raise_on_iter=ConnectionError("first"), collector=None)
         return MockWS(messages=[], collector=collector)
 
     with (
@@ -302,9 +293,7 @@ async def test_refresh_updates_stale_entry(collector, tmp_path):
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            return MockWS(
-                messages=[], raise_on_iter=ConnectionError("first"), collector=None
-            )
+            return MockWS(messages=[], raise_on_iter=ConnectionError("first"), collector=None)
         return MockWS(messages=[], collector=collector)
 
     with (
@@ -333,17 +322,15 @@ async def test_gap_detection_logs_warning(collector, caplog, tmp_path):
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            return MockWS(
-                messages=[], raise_on_iter=ConnectionError("fail"), collector=None
-            )
+            return MockWS(messages=[], raise_on_iter=ConnectionError("fail"), collector=None)
         return MockWS(messages=[], collector=collector)
 
     with (
         patch("scraper.websockets.connect", side_effect=lambda *a, **k: make_ws()),
         patch("scraper.RECONNECT_DELAY", 0),
+        caplog.at_level(logging.WARNING),
     ):
-        with caplog.at_level(logging.WARNING):
-            await collector._stream_interval("1m")
+        await collector._stream_interval("1m")
 
     gap_warnings = [r for r in caplog.records if "gap" in r.message.lower()]
     assert len(gap_warnings) > 0
@@ -365,9 +352,9 @@ async def test_no_gap_warning_when_data_is_recent(collector, caplog, tmp_path):
     with (
         patch("scraper.websockets.connect", side_effect=lambda *a, **k: make_ws()),
         patch("scraper.RECONNECT_DELAY", 0),
+        caplog.at_level(logging.WARNING),
     ):
-        with caplog.at_level(logging.WARNING):
-            await collector._stream_interval("1m")
+        await collector._stream_interval("1m")
 
     gap_warnings = [r for r in caplog.records if "gap" in r.message.lower()]
     assert len(gap_warnings) == 0
@@ -389,9 +376,9 @@ async def test_gap_threshold_is_two_intervals(collector, caplog, tmp_path):
     with (
         patch("scraper.websockets.connect", side_effect=lambda *a, **k: make_ws()),
         patch("scraper.RECONNECT_DELAY", 0),
+        caplog.at_level(logging.WARNING),
     ):
-        with caplog.at_level(logging.WARNING):
-            await collector._stream_interval("1m")
+        await collector._stream_interval("1m")
 
     gap_warnings = [r for r in caplog.records if "gap" in r.message.lower()]
     assert len(gap_warnings) == 0
@@ -562,6 +549,7 @@ def test_signal_handlers_registered(tmp_path):
 
     assert collector._running is True
     import os
+
     os.kill(os.getpid(), signal.SIGINT)
     assert collector._running is False
 

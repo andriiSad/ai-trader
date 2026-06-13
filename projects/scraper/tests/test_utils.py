@@ -1,11 +1,7 @@
 import argparse
-import csv
-import os
-import tempfile
 from pathlib import Path
 
 import pytest
-
 from scraper import (
     CSV_HEADER,
     INTERVAL_MAP,
@@ -20,8 +16,8 @@ from scraper import (
     update_or_append,
 )
 
-
 # --- parse_interval ---
+
 
 class TestParseInterval:
     def test_known_intervals(self):
@@ -54,6 +50,7 @@ class TestParseInterval:
 
 # --- get_csv_path ---
 
+
 class TestGetCsvPath:
     def test_basic(self):
         p = get_csv_path("data", "BTC_USDT", "1m")
@@ -65,6 +62,7 @@ class TestGetCsvPath:
 
 
 # --- ensure_csv ---
+
 
 class TestEnsureCsv:
     def test_creates_file_with_header(self, tmp_path):
@@ -91,6 +89,7 @@ class TestEnsureCsv:
 
 
 # --- get_last_timestamp ---
+
 
 class TestGetLastTimestamp:
     def test_empty_file(self, tmp_path):
@@ -125,11 +124,29 @@ class TestGetLastTimestamp:
 
 # --- reorder_candle ---
 
+
 class TestReorderCandle:
     def test_reorder(self):
-        whitebit = [1580860800, "0.020543", "0.020553", "0.020614", "0.02054", "7342.597", "151.09", "ETH_BTC"]
+        whitebit = [
+            1580860800,
+            "0.020543",
+            "0.020553",
+            "0.020614",
+            "0.02054",
+            "7342.597",
+            "151.09",
+            "ETH_BTC",
+        ]
         ohlcv = reorder_candle(whitebit)
-        assert ohlcv == [1580860800, "0.020543", "0.020614", "0.02054", "0.020553", "7342.597", "151.09"]
+        assert ohlcv == [
+            1580860800,
+            "0.020543",
+            "0.020614",
+            "0.02054",
+            "0.020553",
+            "7342.597",
+            "151.09",
+        ]
 
     def test_market_dropped(self):
         whitebit = [100, "o", "c", "h", "l", "v", "d", "BTC_USDT"]
@@ -140,16 +157,17 @@ class TestReorderCandle:
     def test_ohlcv_order(self):
         whitebit = [100, "open", "close", "high", "low", "vol", "deal", "X"]
         ohlcv = reorder_candle(whitebit)
-        assert ohlcv[0] == 100        # timestamp
-        assert ohlcv[1] == "open"      # open
-        assert ohlcv[2] == "high"      # high (was index 3)
-        assert ohlcv[3] == "low"       # low (was index 4)
-        assert ohlcv[4] == "close"     # close (was index 2)
-        assert ohlcv[5] == "vol"       # volume
-        assert ohlcv[6] == "deal"      # deal
+        assert ohlcv[0] == 100  # timestamp
+        assert ohlcv[1] == "open"  # open
+        assert ohlcv[2] == "high"  # high (was index 3)
+        assert ohlcv[3] == "low"  # low (was index 4)
+        assert ohlcv[4] == "close"  # close (was index 2)
+        assert ohlcv[5] == "vol"  # volume
+        assert ohlcv[6] == "deal"  # deal
 
 
 # --- append_candles ---
+
 
 class TestAppendCandles:
     def test_append_to_new_file(self, tmp_path):
@@ -175,6 +193,7 @@ class TestAppendCandles:
 
 
 # --- update_or_append ---
+
 
 class TestUpdateOrAppend:
     def test_first_append(self, tmp_path):
@@ -221,6 +240,7 @@ class TestUpdateOrAppend:
 
 
 # --- build_config / load_config ---
+
 
 class TestConfig:
     def test_load_config(self, tmp_path):
