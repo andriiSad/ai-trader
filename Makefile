@@ -1,4 +1,4 @@
-.PHONY: test lint format install-scraper
+.PHONY: test lint format install install-scraper install-dev
 
 # Run all tests
 test:
@@ -19,6 +19,13 @@ format:
 # Install scraper dependencies
 install-scraper:
 	cd projects/scraper && pip install -r requirements.txt
+
+# Install dev tools (ruff, pytest)
+install-dev:
+	pip install -r requirements-dev.txt
+
+# Install everything
+install: install-dev install-scraper
 
 # Run scraper backfill
 backfill:
