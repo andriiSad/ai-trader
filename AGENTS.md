@@ -75,6 +75,31 @@ Be skeptical of: high Sharpe, tiny test windows, too many tried variants, unstab
 
 End important plans/code/architectures with: assumptions, leakage risks, data quality risks, cost realism, operational failure modes, overfitting risk, concrete improvements.
 
+## Agent Skills
+
+### Issue tracker
+GitHub Issues via `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+5 canonical state roles + 2 category roles. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+Single-context. CONTEXT.md at root, ADRs in docs/adr/. See `docs/agents/domain.md`.
+
+### Skill Usage
+- **Plan stress-testing**: Use `/grill-with-docs` (not built-in grill-me)
+- **Create PRD**: Use `/to-prd` to synthesize conversation into PRD issue
+- **Break into issues**: Use `/to-issues` to create vertical slice issues
+- **Triage**: Use `/triage` to move issues through state machine
+- **Implement**: Use `/tdd` for test-driven AFK implementation
+- **Review**: Use `/review` for two-axis review (Standards + Spec)
+- **Debug**: Use `/diagnose` for disciplined bug diagnosis
+- **Handoff**: Use `/handoff` to compact session for next agent
+- **Architecture**: Use `/improve-codebase-architecture` to find deepening opportunities
+- **Prototype**: Use `/prototype` for throwaway design exploration
+- **Zoom out**: Use `/zoom-out` for broader context on unfamiliar code
+- **Compressed mode**: Use `/caveman` for token-efficient responses
+
 ## Security: Keys and Secrets
 
 Before every commit, scan staged files for:
