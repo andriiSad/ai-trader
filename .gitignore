@@ -2,6 +2,7 @@
 docs/
 CONTEXT.md
 .tasks/
+AGENTS.md
 __pycache__/
 *.pyc
 .pytest_cache/
