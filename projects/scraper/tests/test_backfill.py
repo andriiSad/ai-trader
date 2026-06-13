@@ -1,20 +1,17 @@
 import asyncio
 import json
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from scraper import (
-    Backfiller,
     CSV_HEADER,
+    Backfiller,
     append_candles,
     ensure_csv,
     get_csv_path,
-    get_last_timestamp,
-    parse_interval,
 )
 
 
@@ -73,9 +70,7 @@ class SmartFakeWS:
 
     def __init__(self, result_factory=None):
         self.sent = []
-        self._result_factory = result_factory or (
-            lambda req: [_whitebit_candle(req["params"][1])]
-        )
+        self._result_factory = result_factory or (lambda req: [_whitebit_candle(req["params"][1])])
 
     async def send(self, msg):
         self.sent.append(json.loads(msg))
@@ -115,6 +110,7 @@ def _seed_csv(csv_path, ts):
 
 # --- _determine_start ---
 
+
 class TestDetermineStart:
     def test_from_last_timestamp(self, tmp_path):
         csv_path = tmp_path / "BTC_USDT" / "1m.csv"
@@ -129,7 +125,7 @@ class TestDetermineStart:
         ensure_csv(csv_path)
         config = _make_config(tmp_path, start_date="2026-01-01")
         b = Backfiller(config)
-        expected = int(datetime(2026, 1, 1, tzinfo=timezone.utc).timestamp())
+        expected = int(datetime(2026, 1, 1, tzinfo=UTC).timestamp())
         assert b._determine_start(csv_path, 60) == expected
 
     def test_default_30_days(self, tmp_path):
@@ -137,9 +133,9 @@ class TestDetermineStart:
         ensure_csv(csv_path)
         config = _make_config(tmp_path)
         b = Backfiller(config)
-        before = int((datetime.now(timezone.utc) - timedelta(days=30)).timestamp())
+        before = int((datetime.now(UTC) - timedelta(days=30)).timestamp())
         result = b._determine_start(csv_path, 60)
-        after = int((datetime.now(timezone.utc) - timedelta(days=30)).timestamp())
+        after = int((datetime.now(UTC) - timedelta(days=30)).timestamp())
         assert before <= result <= after
 
     def test_csv_takes_priority_over_start_date(self, tmp_path):
@@ -151,6 +147,7 @@ class TestDetermineStart:
 
 
 # --- _fetch_candles ---
+
 
 class TestFetchCandles:
     @pytest.mark.asyncio
@@ -167,10 +164,12 @@ class TestFetchCandles:
     async def test_skips_unmatched_ids(self):
         candle = _whitebit_candle(1000)
         target_id = 5
-        ws = FakeWS(recv_queue=[
-            _ws_response(999, []),
-            _ws_response(target_id, [candle]),
-        ])
+        ws = FakeWS(
+            recv_queue=[
+                _ws_response(999, []),
+                _ws_response(target_id, [candle]),
+            ]
+        )
         b = Backfiller(_make_config(Path("/tmp")))
         b._next_id = lambda: target_id
         result = await b._fetch_candles(ws, "BTC_USDT", 1000, 2000, 60)
@@ -201,6 +200,7 @@ class TestFetchCandles:
 
 # --- _keepalive ---
 
+
 class TestKeepalive:
     @pytest.mark.asyncio
     async def test_sends_ping(self):
@@ -229,6 +229,7 @@ class TestKeepalive:
 
 
 # --- run() ---
+
 
 class TestRun:
     @pytest.mark.asyncio
@@ -273,7 +274,7 @@ class TestRun:
                 await b.run()
 
         row = csv_path.read_text().strip().split("\n")[2].split(",")
-        assert row == ["{}".format(new_ts), "100.0", "105.0", "95.0", "100.0", "10.0", "1000.0"]
+        assert row == [f"{new_ts}", "100.0", "105.0", "95.0", "100.0", "10.0", "1000.0"]
 
     @pytest.mark.asyncio
     async def test_resume_from_last_timestamp(self, tmp_path):
@@ -339,10 +340,12 @@ class TestRun:
     @pytest.mark.asyncio
     async def test_start_date_override(self, tmp_path):
         config = _make_config(
-            tmp_path, pairs=["BTC_USDT"], intervals=["1m"],
+            tmp_path,
+            pairs=["BTC_USDT"],
+            intervals=["1m"],
             start_date="2026-01-01",
         )
-        expected_start = int(datetime(2026, 1, 1, tzinfo=timezone.utc).timestamp())
+        expected_start = int(datetime(2026, 1, 1, tzinfo=UTC).timestamp())
 
         requests_seen = []
         ws_obj = SmartFakeWS()
@@ -395,7 +398,9 @@ class TestRun:
     @pytest.mark.asyncio
     async def test_chunking_multiple_chunks(self, tmp_path):
         config = _make_config(
-            tmp_path, pairs=["BTC_USDT"], intervals=["1m"],
+            tmp_path,
+            pairs=["BTC_USDT"],
+            intervals=["1m"],
             chunk_size=2,
         )
         now = int(time.time())

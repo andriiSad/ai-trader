@@ -1,0 +1,46 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      scraper: ${{ steps.changes.outputs.scraper }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            scraper:
+              - 'projects/scraper/**'
+
+  test-scraper:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.scraper == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          cd projects/scraper
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          cd projects/scraper
+          python -m pytest tests/ -v --tb=short

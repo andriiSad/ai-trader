@@ -7,14 +7,13 @@ import csv
 import json
 import logging
 import signal
-import sys
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import websockets
-from websockets.exceptions import ConnectionClosed
 import yaml
+from websockets.exceptions import ConnectionClosed
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,12 +27,31 @@ PING_INTERVAL = 50
 RECONNECT_DELAY = 5
 
 INTERVAL_MAP = {
-    "1s": 1, "2s": 2, "3s": 3, "5s": 5, "10s": 10, "12s": 12,
-    "15s": 15, "20s": 20, "30s": 30,
-    "1m": 60, "2m": 120, "3m": 180, "5m": 300,
-    "15m": 900, "30m": 1800,
-    "1h": 3600, "2h": 7200, "4h": 14400, "6h": 21600, "12h": 43200,
-    "1d": 86400, "2d": 172800, "3d": 259200, "1w": 604800, "1mo": 2592000,
+    "1s": 1,
+    "2s": 2,
+    "3s": 3,
+    "5s": 5,
+    "10s": 10,
+    "12s": 12,
+    "15s": 15,
+    "20s": 20,
+    "30s": 30,
+    "1m": 60,
+    "2m": 120,
+    "3m": 180,
+    "5m": 300,
+    "15m": 900,
+    "30m": 1800,
+    "1h": 3600,
+    "2h": 7200,
+    "4h": 14400,
+    "6h": 21600,
+    "12h": 43200,
+    "1d": 86400,
+    "2d": 172800,
+    "3d": 259200,
+    "1w": 604800,
+    "1mo": 2592000,
 }
 
 CSV_HEADER = ["timestamp", "open", "high", "low", "close", "volume", "deal"]
@@ -155,8 +173,9 @@ def make_parser():
         description="WhiteBIT candle data collector for ML trading research"
     )
     parser.add_argument(
-        "command", choices=["backfill", "live"],
-        help="backfill: fetch historical data; live: stream real-time data"
+        "command",
+        choices=["backfill", "live"],
+        help="backfill: fetch historical data; live: stream real-time data",
     )
     parser.add_argument("--config", default="config.yaml", help="YAML config file path")
     parser.add_argument("--pairs", nargs="+", help="Override trading pairs")
@@ -167,6 +186,7 @@ def make_parser():
 
 
 # --- Backfiller ---
+
 
 class Backfiller:
     def __init__(self, config):
@@ -189,11 +209,13 @@ class Backfiller:
 
     async def _fetch_candles(self, ws, pair, start_ts, end_ts, interval_sec):
         req_id = self._next_id()
-        msg = json.dumps({
-            "id": req_id,
-            "method": "candles_request",
-            "params": [pair, start_ts, end_ts, interval_sec],
-        })
+        msg = json.dumps(
+            {
+                "id": req_id,
+                "method": "candles_request",
+                "params": [pair, start_ts, end_ts, interval_sec],
+            }
+        )
         await ws.send(msg)
 
         while True:
@@ -213,10 +235,10 @@ class Backfiller:
 
         start_date = self.config.get("start_date")
         if start_date:
-            dt = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            dt = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=UTC)
             return int(dt.timestamp())
 
-        return int((datetime.now(timezone.utc) - timedelta(days=30)).timestamp())
+        return int((datetime.now(UTC) - timedelta(days=30)).timestamp())
 
     async def run(self):
         pairs = self.config["pairs"]
@@ -279,6 +301,7 @@ class Backfiller:
 
 # --- LiveCollector ---
 
+
 class LiveCollector:
     def __init__(self, config):
         self.config = config
@@ -301,13 +324,11 @@ class LiveCollector:
 
         log.info(
             "Live streaming %d pairs × %d intervals",
-            len(pairs), len(intervals),
+            len(pairs),
+            len(intervals),
         )
 
-        tasks = [
-            self._stream_interval(interval)
-            for interval in intervals
-        ]
+        tasks = [self._stream_interval(interval) for interval in intervals]
         await asyncio.gather(*tasks)
 
     async def _stream_interval(self, interval_str):
@@ -336,7 +357,10 @@ class LiveCollector:
                         market = candle[7]
                         csv_path = get_csv_path(data_dir, market, interval_str)
                         log.info(
-                            "[%s] %s t=%s", interval_str, market, candle[0],
+                            "[%s] %s t=%s",
+                            interval_str,
+                            market,
+                            candle[0],
                         )
                         update_or_append(csv_path, candle, self._last_ts_map)
             except (ConnectionClosed, ConnectionError) as e:
@@ -367,7 +391,9 @@ class LiveCollector:
 
     async def _subscribe(self, ws, pair, interval_sec):
         sub_id = id(ws) + interval_sec
-        msg = json.dumps({"id": sub_id, "method": "candles_subscribe", "params": [pair, interval_sec]})
+        msg = json.dumps(
+            {"id": sub_id, "method": "candles_subscribe", "params": [pair, interval_sec]}
+        )
         await ws.send(msg)
         await asyncio.sleep(0.1)
 
@@ -398,11 +424,16 @@ class LiveCollector:
                     log.warning(
                         "[%s] %s: gap of %ds detected (last_ts=%d, now=%d). "
                         "Consider running `scraper.py backfill`.",
-                        interval_str, pair, gap, last_ts, now,
+                        interval_str,
+                        pair,
+                        gap,
+                        last_ts,
+                        now,
                     )
 
 
 # --- Entrypoint ---
+
 
 def main():
     parser = make_parser()

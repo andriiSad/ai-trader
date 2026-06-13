@@ -111,3 +111,48 @@ Before every commit, scan staged files for:
 - Exchange API keys (Binance, Coinbase, etc.)
 
 If secrets are found: stop the commit, alert the user, suggest moving to environment variables or a secrets manager. Never commit secrets to git history — even if the user asks. Use `.gitignore` for `.env` and credential files.
+
+## CI/CD Pipeline
+
+GitHub Actions enforces CI on every PR to `main`. **PRs cannot merge if CI fails.**
+
+### What Runs
+
+| Workflow | Jobs | Blocks Merge |
+|----------|------|--------------|
+| `test.yml` | `test-scraper` (Python 3.12, 3.13, 3.14 matrix) | ✅ Yes |
+| `lint.yml` | `lint` (ruff check + format) | ✅ Yes |
+
+### Branch Protection (enforced)
+
+- **Required status checks**: `test-scraper (3.12)`, `test-scraper (3.13)`, `test-scraper (3.14)`, `lint`
+- **Strict mode**: branches must be up-to-date before merge
+- **PR review**: 1 approving review required
+- **Enforce on admins**: yes, no exceptions
+
+### Local Commands
+
+```bash
+# Run tests locally (must pass before pushing)
+make test
+# or: cd projects/scraper && python3 -m pytest tests/ -v
+
+# Lint (must pass before pushing)
+make lint
+# or: ruff check .
+
+# Format (must pass before pushing)
+make format
+# or: ruff format .
+
+# Install dependencies
+make install-scraper
+```
+
+### Rules
+
+1. **Never push if tests fail locally** — run `make test` first
+2. **Never push if lint fails** — run `make lint` and `make format` first
+3. **CI must pass before merge** — no exceptions, no force-merging
+4. **1 approving review required** — @andriiSad must approve
+5. **New projects must add their own test job** to `.github/workflows/test.yml`

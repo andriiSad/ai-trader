@@ -3,7 +3,6 @@ import json
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from scraper import (
     CSV_HEADER,
     LiveCollector,
@@ -53,11 +52,13 @@ class MockWS:
 
 
 def candle_msg(pair, ts):
-    return json.dumps({
-        "id": None,
-        "method": "candles_update",
-        "params": [[ts, "100", "100", "105", "95", "10", "1000", pair]],
-    })
+    return json.dumps(
+        {
+            "id": None,
+            "method": "candles_update",
+            "params": [[ts, "100", "100", "105", "95", "10", "1000", pair]],
+        }
+    )
 
 
 @pytest.fixture
@@ -157,11 +158,13 @@ async def test_stream_writes_candle_to_csv(collector, tmp_path):
 @pytest.mark.asyncio
 async def test_stream_candle_reordered_to_ohlcv(collector, tmp_path):
     data_dir = collector.config["output_dir"]
-    msg = json.dumps({
-        "id": None,
-        "method": "candles_update",
-        "params": [[2000, "open", "close", "high", "low", "vol", "deal", "BTC_USDT"]],
-    })
+    msg = json.dumps(
+        {
+            "id": None,
+            "method": "candles_update",
+            "params": [[2000, "open", "close", "high", "low", "vol", "deal", "BTC_USDT"]],
+        }
+    )
     ws = MockWS(messages=[msg], collector=collector)
 
     with patch("scraper.websockets.connect", return_value=ws):
@@ -189,11 +192,13 @@ async def test_stream_updates_last_ts_map(collector, tmp_path):
 async def test_stream_overwrites_same_timestamp(collector, tmp_path):
     data_dir = collector.config["output_dir"]
     msg1 = candle_msg("BTC_USDT", 1000)
-    msg2 = json.dumps({
-        "id": None,
-        "method": "candles_update",
-        "params": [[1000, "200", "200", "205", "195", "20", "2000", "BTC_USDT"]],
-    })
+    msg2 = json.dumps(
+        {
+            "id": None,
+            "method": "candles_update",
+            "params": [[1000, "200", "200", "205", "195", "20", "2000", "BTC_USDT"]],
+        }
+    )
     ws = MockWS(messages=[msg1, msg2], collector=collector)
 
     with patch("scraper.websockets.connect", return_value=ws):
