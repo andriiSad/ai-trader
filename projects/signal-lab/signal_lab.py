@@ -14,7 +14,7 @@ from src.pipeline import print_summary, run_pipeline
 from src.scaler import fit_scaler, transform
 from src.walk_forward import split
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", force=True)
 
 MODEL_CHOICES = ["lr", "lgbm", "lstm"]
 
