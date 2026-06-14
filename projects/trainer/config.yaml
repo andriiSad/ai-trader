@@ -1,0 +1,28 @@
+pairs:
+  - BTC_USDT
+  - ETH_USDT
+
+interval: 5m
+data_dir: ../../data
+
+features:
+  prediction_horizon: 5
+  label_threshold: 0.0
+
+walk_forward:
+  train_window: "3ME"
+  test_window: "1ME"
+  step: "1ME"
+
+model:
+  objective: binary
+  metric: binary_logloss
+  num_leaves: 31
+  learning_rate: 0.05
+  feature_fraction: 0.8
+  bagging_fraction: 0.8
+  bagging_freq: 5
+  seed: 42
+
+output:
+  results_path: ../../data/reports/evaluation_results.json

@@ -16,5 +16,5 @@ ignore = ["E501", "SIM105", "SIM117", "B904"]
 quote-style = "double"
 
 [tool.pytest.ini_options]
-testpaths = ["projects/scraper/tests"]
+testpaths = ["projects/scraper/tests", "projects/trainer/tests"]
 asyncio_mode = "auto"

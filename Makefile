@@ -3,6 +3,7 @@
 # Run all tests
 test:
 	cd projects/scraper && python3 -m pytest tests/ -v --tb=short
+	cd projects/trainer && python3 -m pytest tests/ -v --tb=short
 
 # Run tests with coverage
 test-cover:
