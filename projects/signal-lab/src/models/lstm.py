@@ -20,7 +20,12 @@ def _lstm_worker(payload: bytes, result_path: str) -> None:
     p = pickle.loads(payload)
     X_train, y_train, X_test, y_test = p["X_train"], p["y_train"], p["X_test"], p["y_test"]
     seq_len, hidden_size, max_epochs, patience, batch_size, val_split = (
-        p["seq_len"], p["hidden_size"], p["max_epochs"], p["patience"], p["batch_size"], p["val_split"],
+        p["seq_len"],
+        p["hidden_size"],
+        p["max_epochs"],
+        p["patience"],
+        p["batch_size"],
+        p["val_split"],
     )
 
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -92,7 +97,10 @@ def _lstm_worker(payload: bytes, result_path: str) -> None:
         val_loss /= n_val_batches
 
         if epoch == 0 or epoch % 10 == 0 or val_loss < best_val_loss:
-            print(f"    Epoch {epoch:3d}: train_loss={train_loss / n_batches:.4f}, val_loss={val_loss:.4f}, patience={patience_counter}/{patience}", flush=True)
+            print(
+                f"    Epoch {epoch:3d}: train_loss={train_loss / n_batches:.4f}, val_loss={val_loss:.4f}, patience={patience_counter}/{patience}",
+                flush=True,
+            )
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -154,13 +162,20 @@ def train_lstm(
     batch_size: int = 64,
     val_split: float = 0.2,
 ) -> dict:
-    payload = pickle.dumps({
-        "X_train": X_train, "y_train": y_train,
-        "X_test": X_test, "y_test": y_test,
-        "seq_len": seq_len, "hidden_size": hidden_size,
-        "max_epochs": max_epochs, "patience": patience,
-        "batch_size": batch_size, "val_split": val_split,
-    })
+    payload = pickle.dumps(
+        {
+            "X_train": X_train,
+            "y_train": y_train,
+            "X_test": X_test,
+            "y_test": y_test,
+            "seq_len": seq_len,
+            "hidden_size": hidden_size,
+            "max_epochs": max_epochs,
+            "patience": patience,
+            "batch_size": batch_size,
+            "val_split": val_split,
+        }
+    )
 
     with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
         result_path = f.name
@@ -178,6 +193,7 @@ def train_lstm(
         result = pickle.load(f)
 
     import os
+
     os.unlink(result_path)
 
     return {
