@@ -96,6 +96,7 @@ def run_walk_forward(df: pd.DataFrame, feature_cols: list[str], splits: list[dic
     all_indices = np.array([], dtype=int)
     feature_importance_accum: dict[str, float] = {}
     pairs = sorted(df["pair"].unique().tolist()) if "pair" in df.columns else []
+    prediction_rows: list[dict] = []
 
     for fold in splits:
         train_mask = fold["train_mask"]
@@ -111,6 +112,20 @@ def run_walk_forward(df: pd.DataFrame, feature_cols: list[str], splits: list[dic
         test_indices = np.where(test_mask.values)[0]
         all_predictions[test_indices] = result["predictions"]
         all_indices = np.concatenate([all_indices, test_indices])
+
+        test_df = df.loc[test_mask]
+        for i, idx in enumerate(test_df.index):
+            row = {
+                "timestamp": test_df.loc[idx, "timestamp"],
+                "pair": test_df.loc[idx, "pair"] if "pair" in test_df.columns else "",
+                "probability": float(result["predictions"][i]),
+                "hard_prediction": int(result["hard_predictions"][i]),
+                "label": int(test_df.loc[idx, "label"]),
+                "fold_id": fold["fold_id"],
+                "fold_test_start": fold["test_start"],
+                "fold_test_end": fold["test_end"],
+            }
+            prediction_rows.append(row)
 
         metrics = compute_metrics(y_test.values, result["predictions"])
         fold_result = {
@@ -159,4 +174,5 @@ def run_walk_forward(df: pd.DataFrame, feature_cols: list[str], splits: list[dic
         "per_fold": per_fold,
         "per_pair": per_pair,
         "feature_importance": feature_importance_list,
+        "prediction_rows": prediction_rows,
     }

@@ -26,3 +26,4 @@ model:
 
 output:
   results_path: ../../data/reports/evaluation_results.json
+  predictions_path: ../../data/reports/predictions.csv

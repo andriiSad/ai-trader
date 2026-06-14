@@ -83,6 +83,40 @@ def run_evaluate(config: dict, results: dict) -> str:
     return str(out)
 
 
+def save_predictions(prediction_rows: list[dict], path: str) -> None:
+    """Write per-row predictions to CSV, ordered by timestamp ascending.
+
+    Parameters
+    ----------
+    prediction_rows : list[dict]
+        Each dict must contain: timestamp, pair, probability,
+        hard_prediction, label, fold_id, fold_test_start, fold_test_end.
+    path : str
+        Destination CSV file path.
+    """
+    columns = [
+        "timestamp",
+        "pair",
+        "probability",
+        "hard_prediction",
+        "label",
+        "fold_id",
+        "fold_test_start",
+        "fold_test_end",
+    ]
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    if prediction_rows:
+        df = pd.DataFrame(prediction_rows)
+        df = df.sort_values("timestamp").reset_index(drop=True)
+    else:
+        df = pd.DataFrame(columns=columns)
+
+    df.to_csv(out, index=False)
+    logger.info("Predictions saved to %s (%d rows)", out, len(df))
+
+
 def run_visualize(config: dict) -> None:
     """Build results dashboard + data exploration dashboard."""
     results_path = config.get("output", {}).get(
@@ -109,8 +143,15 @@ def run_full_pipeline(config: dict) -> None:
     logger.info("=== Step 2/4: Walk-Forward Training ===")
     results = run_train(config, df)
 
+    prediction_rows = results.pop("prediction_rows", [])
+
     logger.info("=== Step 3/4: Evaluate & Save ===")
     results_path = run_evaluate(config, results)
+
+    predictions_path = config.get("output", {}).get(
+        "predictions_path", "data/reports/predictions.csv"
+    )
+    save_predictions(prediction_rows, predictions_path)
 
     logger.info("=== Step 4/4: Visualize ===")
     run_visualize(config)
