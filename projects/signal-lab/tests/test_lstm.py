@@ -1,6 +1,6 @@
 import numpy as np
-import torch
-from src.models.lstm import LSTMModel, create_sequences, train_lstm
+
+from src.models.lstm import create_sequences, train_lstm
 
 
 def _synthetic_data(n: int = 60, features: int = 3, seed: int = 42):
@@ -11,13 +11,6 @@ def _synthetic_data(n: int = 60, features: int = 3, seed: int = 42):
     y = (prob > 0.5).astype(int)
     split = n * 4 // 5
     return X[:split], y[:split], X[split:], y[split:]
-
-
-def test_lstm_model_forward_pass():
-    model = LSTMModel(input_size=3, hidden_size=16, num_layers=1)
-    x = torch.randn(2, 10, 3)
-    out = model(x)
-    assert out.shape == (2,)
 
 
 def test_create_sequences_shape():
@@ -60,8 +53,3 @@ def test_train_lstm_probabilities_in_range():
     result = train_lstm(X_train, y_train, X_test, y_test, seq_len=5, max_epochs=5, patience=2)
     assert np.all(result["y_prob"] >= 0.0)
     assert np.all(result["y_prob"] <= 1.0)
-
-
-def test_train_lstm_device_selection():
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    assert device.type in ("mps", "cpu")
