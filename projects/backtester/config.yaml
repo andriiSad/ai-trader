@@ -3,8 +3,8 @@ pairs:
   - ETH_USDT
 
 interval: 5m
-predictions_path: ../trainer/data/reports/predictions.csv
-candles_dir: ../trainer/data
+predictions_path: ../../data/reports/predictions.csv
+candles_dir: ../../data
 
 strategy:
   threshold: 0.55
