@@ -13,7 +13,9 @@ def _load_eth_data(data_dir: str, interval: str) -> pd.DataFrame:
 
 
 def _normalize_timestamps(source_ts: pd.Series, target_ts: pd.Series) -> pd.Series:
-    target_is_datetime = hasattr(getattr(target_ts, "dtype", None), "tz") or str(getattr(target_ts, "dtype", "")).startswith("datetime")
+    target_is_datetime = hasattr(getattr(target_ts, "dtype", None), "tz") or str(
+        getattr(target_ts, "dtype", "")
+    ).startswith("datetime")
     if target_is_datetime:
         return pd.to_datetime(source_ts, errors="coerce")
     source_numeric = pd.to_numeric(source_ts, errors="coerce")

@@ -139,9 +139,7 @@ class TestSaveOrderbookSnapshot:
 class TestBuildParserOrderbook:
     def test_orderbook_subcommand(self):
         parser = build_parser()
-        args = parser.parse_args(
-            ["orderbook", "--pair", "BTC_USDT", "--duration", "1h"]
-        )
+        args = parser.parse_args(["orderbook", "--pair", "BTC_USDT", "--duration", "1h"])
         assert args.command == "orderbook"
         assert args.pair == "BTC_USDT"
         assert args.duration == "1h"
@@ -202,7 +200,9 @@ class TestRunOrderbook:
         with patch("src.collect.websockets", create=True) as mock_ws_mod:
             mock_ws_mod.connect = MagicMock(return_value=_async_context_manager(mock_ws))
             with patch("src.collect.time") as mock_time:
-                mock_time.time = MagicMock(side_effect=[1718000000, 1718000001, 1718000061, 1718000121, 1718000180])
+                mock_time.time = MagicMock(
+                    side_effect=[1718000000, 1718000001, 1718000061, 1718000121, 1718000180]
+                )
                 mock_time.sleep = MagicMock()
                 with patch("src.collect.asyncio") as mock_asyncio:
                     mock_asyncio.get_event_loop = MagicMock(return_value=_mock_event_loop())

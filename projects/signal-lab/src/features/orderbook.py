@@ -26,12 +26,16 @@ def _load_orderbook_snapshots(data_dir: str, pair: str) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def _aggregate_snapshots(
-    snapshots: pd.DataFrame, candle_timestamps: pd.Series
-) -> pd.DataFrame:
+def _aggregate_snapshots(snapshots: pd.DataFrame, candle_timestamps: pd.Series) -> pd.DataFrame:
     if snapshots.empty:
         result = pd.DataFrame({"timestamp": candle_timestamps})
-        for col in ["ob_bid_ask_ratio", "ob_total_bid", "ob_total_ask", "ob_imbalance", "ob_mid_price_deviation"]:
+        for col in [
+            "ob_bid_ask_ratio",
+            "ob_total_bid",
+            "ob_total_ask",
+            "ob_imbalance",
+            "ob_mid_price_deviation",
+        ]:
             result[col] = np.nan
         return result
 
@@ -49,14 +53,16 @@ def _aggregate_snapshots(
     for cts in candle_ts_sorted:
         mask = snapshot_ts_sorted <= cts
         if not mask.any():
-            results.append({
-                "timestamp": cts,
-                "ob_bid_ask_ratio": np.nan,
-                "ob_total_bid": np.nan,
-                "ob_total_ask": np.nan,
-                "ob_imbalance": np.nan,
-                "ob_mid_price_deviation": np.nan,
-            })
+            results.append(
+                {
+                    "timestamp": cts,
+                    "ob_bid_ask_ratio": np.nan,
+                    "ob_total_bid": np.nan,
+                    "ob_total_ask": np.nan,
+                    "ob_imbalance": np.nan,
+                    "ob_mid_price_deviation": np.nan,
+                }
+            )
             continue
 
         relevant_ts = snapshot_ts_sorted[mask][-1]
@@ -69,32 +75,44 @@ def _aggregate_snapshots(
         total_ask = asks["quantity"].sum()
 
         bid_ask_ratio = total_bid / total_ask if total_ask > 0 else np.nan
-        imbalance = (total_bid - total_ask) / (total_bid + total_ask) if (total_bid + total_ask) > 0 else np.nan
+        imbalance = (
+            (total_bid - total_ask) / (total_bid + total_ask)
+            if (total_bid + total_ask) > 0
+            else np.nan
+        )
 
         best_bid = bids["price"].max() if not bids.empty else np.nan
         best_ask = asks["price"].min() if not asks.empty else np.nan
 
         if not np.isnan(best_bid) and not np.isnan(best_ask) and best_ask > 0:
             actual_mid = (best_bid + best_ask) / 2
-            weighted_bid = (bids["price"] * bids["quantity"]).sum() / total_bid if total_bid > 0 else np.nan
-            weighted_ask = (asks["price"] * asks["quantity"]).sum() / total_ask if total_ask > 0 else np.nan
+            weighted_bid = (
+                (bids["price"] * bids["quantity"]).sum() / total_bid if total_bid > 0 else np.nan
+            )
+            weighted_ask = (
+                (asks["price"] * asks["quantity"]).sum() / total_ask if total_ask > 0 else np.nan
+            )
             weighted_mid = (
                 (weighted_bid + weighted_ask) / 2
                 if not np.isnan(weighted_bid) and not np.isnan(weighted_ask)
                 else np.nan
             )
-            mid_price_deviation = (weighted_mid - actual_mid) / actual_mid if actual_mid > 0 else np.nan
+            mid_price_deviation = (
+                (weighted_mid - actual_mid) / actual_mid if actual_mid > 0 else np.nan
+            )
         else:
             mid_price_deviation = np.nan
 
-        results.append({
-            "timestamp": cts,
-            "ob_bid_ask_ratio": bid_ask_ratio,
-            "ob_total_bid": total_bid,
-            "ob_total_ask": total_ask,
-            "ob_imbalance": imbalance,
-            "ob_mid_price_deviation": mid_price_deviation,
-        })
+        results.append(
+            {
+                "timestamp": cts,
+                "ob_bid_ask_ratio": bid_ask_ratio,
+                "ob_total_bid": total_bid,
+                "ob_total_ask": total_ask,
+                "ob_imbalance": imbalance,
+                "ob_mid_price_deviation": mid_price_deviation,
+            }
+        )
 
     return pd.DataFrame(results)
 

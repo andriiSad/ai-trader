@@ -42,6 +42,7 @@ def log_confusion_matrix(y_true, y_pred, fold_idx: int) -> None:
     try:
         import numpy as np
         import wandb
+
         cm = np.array(wandb.confusion_matrix(y_true=y_true, preds=y_pred))
         wandb.log({f"confusion_matrix_fold_{fold_idx}": cm}, step=fold_idx)
     except Exception:

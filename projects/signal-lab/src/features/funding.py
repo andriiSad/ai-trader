@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 
 
-def generate(df: pd.DataFrame, data_dir: str = "data", pair: str = "BTC_USDT", **kwargs) -> pd.DataFrame:
+def generate(
+    df: pd.DataFrame, data_dir: str = "data", pair: str = "BTC_USDT", **kwargs
+) -> pd.DataFrame:
     """Generate funding rate features from candle data.
 
     Loads funding rate data from CSV, forward-fills to candle timestamps,
@@ -23,18 +25,28 @@ def generate(df: pd.DataFrame, data_dir: str = "data", pair: str = "BTC_USDT", *
 
     funding_path = Path(data_dir) / pair / "funding.csv"
     if not funding_path.exists():
-        return df[["timestamp"]].iloc[0:0].copy().assign(
-            funding_rate_raw=pd.Series(dtype=float),
-            funding_rate_cum_3=pd.Series(dtype=float),
-            funding_rate_roc=pd.Series(dtype=float),
+        return (
+            df[["timestamp"]]
+            .iloc[0:0]
+            .copy()
+            .assign(
+                funding_rate_raw=pd.Series(dtype=float),
+                funding_rate_cum_3=pd.Series(dtype=float),
+                funding_rate_roc=pd.Series(dtype=float),
+            )
         )
 
     funding_df = pd.read_csv(funding_path)
     if funding_df.empty:
-        return df[["timestamp"]].iloc[0:0].copy().assign(
-            funding_rate_raw=pd.Series(dtype=float),
-            funding_rate_cum_3=pd.Series(dtype=float),
-            funding_rate_roc=pd.Series(dtype=float),
+        return (
+            df[["timestamp"]]
+            .iloc[0:0]
+            .copy()
+            .assign(
+                funding_rate_raw=pd.Series(dtype=float),
+                funding_rate_cum_3=pd.Series(dtype=float),
+                funding_rate_roc=pd.Series(dtype=float),
+            )
         )
 
     funding_df["timestamp"] = funding_df["timestamp"].astype(int)
@@ -59,15 +71,22 @@ def generate(df: pd.DataFrame, data_dir: str = "data", pair: str = "BTC_USDT", *
     merged["funding_rate"] = merged["funding_rate"].ffill()
 
     if merged.empty:
-        return df[["timestamp"]].iloc[0:0].copy().assign(
-            funding_rate_raw=pd.Series(dtype=float),
-            funding_rate_cum_3=pd.Series(dtype=float),
-            funding_rate_roc=pd.Series(dtype=float),
+        return (
+            df[["timestamp"]]
+            .iloc[0:0]
+            .copy()
+            .assign(
+                funding_rate_raw=pd.Series(dtype=float),
+                funding_rate_cum_3=pd.Series(dtype=float),
+                funding_rate_roc=pd.Series(dtype=float),
+            )
         )
 
     result = merged[["timestamp"]].copy()
     result["funding_rate_raw"] = merged["funding_rate"].values
-    result["funding_rate_cum_3"] = merged["funding_rate"].rolling(window=3, min_periods=3).sum().values
+    result["funding_rate_cum_3"] = (
+        merged["funding_rate"].rolling(window=3, min_periods=3).sum().values
+    )
 
     prev = merged["funding_rate"].shift(1)
     result["funding_rate_roc"] = (merged["funding_rate"] - prev) / prev.abs()

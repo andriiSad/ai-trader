@@ -165,11 +165,7 @@ class TestGetLastFundingTimestamp:
     def test_returns_last_timestamp(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             csv_path = Path(tmpdir) / "test.csv"
-            csv_path.write_text(
-                "timestamp,funding_rate\n"
-                "1718035200,0.0001\n"
-                "1718064000,-0.0002\n"
-            )
+            csv_path.write_text("timestamp,funding_rate\n1718035200,0.0001\n1718064000,-0.0002\n")
             ts = get_last_funding_timestamp(csv_path)
             assert ts == 1718064000
 

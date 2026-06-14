@@ -26,12 +26,16 @@ class TestGenerateOrderbook:
     def test_output_columns(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             _write_orderbook_snapshot(
-                tmpdir, "BTC_USDT", 1718000000,
+                tmpdir,
+                "BTC_USDT",
+                1718000000,
                 bids=[["60000.00", "1.5"], ["59999.00", "2.0"]],
                 asks=[["60001.00", "0.5"], ["60002.00", "1.0"]],
             )
             _write_orderbook_snapshot(
-                tmpdir, "BTC_USDT", 1718014400,
+                tmpdir,
+                "BTC_USDT",
+                1718014400,
                 bids=[["60005.00", "1.2"], ["60004.00", "1.8"]],
                 asks=[["60006.00", "0.6"], ["60007.00", "0.9"]],
             )
@@ -40,8 +44,12 @@ class TestGenerateOrderbook:
             result = generate(df, data_dir=tmpdir, pair="BTC_USDT")
 
             expected_cols = {
-                "timestamp", "ob_bid_ask_ratio", "ob_total_bid",
-                "ob_total_ask", "ob_imbalance", "ob_mid_price_deviation",
+                "timestamp",
+                "ob_bid_ask_ratio",
+                "ob_total_bid",
+                "ob_total_ask",
+                "ob_imbalance",
+                "ob_mid_price_deviation",
             }
             assert set(result.columns) == expected_cols
 
@@ -49,7 +57,9 @@ class TestGenerateOrderbook:
         with tempfile.TemporaryDirectory() as tmpdir:
             for ts in [1718000000, 1718014400, 1718028800]:
                 _write_orderbook_snapshot(
-                    tmpdir, "BTC_USDT", ts,
+                    tmpdir,
+                    "BTC_USDT",
+                    ts,
                     bids=[["60000.00", "1.5"], ["59999.00", "2.0"]],
                     asks=[["60001.00", "0.5"], ["60002.00", "1.0"]],
                 )
@@ -62,7 +72,9 @@ class TestGenerateOrderbook:
     def test_imbalance_range(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             _write_orderbook_snapshot(
-                tmpdir, "BTC_USDT", 1718000000,
+                tmpdir,
+                "BTC_USDT",
+                1718000000,
                 bids=[["60000.00", "3.0"]],
                 asks=[["60001.00", "1.0"]],
             )
@@ -75,7 +87,9 @@ class TestGenerateOrderbook:
     def test_bid_ask_ratio_correct(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             _write_orderbook_snapshot(
-                tmpdir, "BTC_USDT", 1718000000,
+                tmpdir,
+                "BTC_USDT",
+                1718000000,
                 bids=[["60000.00", "4.0"]],
                 asks=[["60001.00", "2.0"]],
             )
@@ -94,12 +108,16 @@ class TestGenerateOrderbook:
     def test_uses_latest_snapshot_per_candle(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             _write_orderbook_snapshot(
-                tmpdir, "BTC_USDT", 1718000000,
+                tmpdir,
+                "BTC_USDT",
+                1718000000,
                 bids=[["60000.00", "1.0"]],
                 asks=[["60001.00", "1.0"]],
             )
             _write_orderbook_snapshot(
-                tmpdir, "BTC_USDT", 1718007200,
+                tmpdir,
+                "BTC_USDT",
+                1718007200,
                 bids=[["60000.00", "5.0"]],
                 asks=[["60001.00", "1.0"]],
             )
@@ -121,12 +139,14 @@ class TestAggregateSnapshots:
         assert result["ob_bid_ask_ratio"].isna().all()
 
     def test_single_snapshot_applied_to_all_candles(self):
-        snapshots = pd.DataFrame({
-            "timestamp": [1718000000] * 4,
-            "side": ["bid", "bid", "ask", "ask"],
-            "price": ["60000", "59999", "60001", "60002"],
-            "quantity": ["1.0", "2.0", "0.5", "1.0"],
-        })
+        snapshots = pd.DataFrame(
+            {
+                "timestamp": [1718000000] * 4,
+                "side": ["bid", "bid", "ask", "ask"],
+                "price": ["60000", "59999", "60001", "60002"],
+                "quantity": ["1.0", "2.0", "0.5", "1.0"],
+            }
+        )
         timestamps = pd.Series([1718000000, 1718014400])
 
         result = _aggregate_snapshots(snapshots, timestamps)

@@ -73,9 +73,7 @@ class TestFetchCandles:
     def test_handles_network_error(self):
         import requests
 
-        with patch(
-            "src.collect.requests.get", side_effect=requests.ConnectionError("timeout")
-        ):
+        with patch("src.collect.requests.get", side_effect=requests.ConnectionError("timeout")):
             with pytest.raises(requests.ConnectionError):
                 fetch_candles("ETH_USDT", "4h", 1718000000, 1718200000)
 
@@ -246,9 +244,7 @@ class TestRunCandles:
     def test_appends_only_new_data(self):
         """Running with new data should only append new candles."""
         first_batch = _make_whitebit_candles(3, start_time=1718000000)
-        second_batch = _make_whitebit_candles(
-            5, start_time=1718000000 + 3 * 4 * 3600
-        )
+        second_batch = _make_whitebit_candles(5, start_time=1718000000 + 3 * 4 * 3600)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             responses_1 = [self._make_response(first_batch), self._make_empty_response()]

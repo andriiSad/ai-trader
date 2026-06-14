@@ -77,7 +77,14 @@ def fetch_candles(
 def reorder_candle(candle: list) -> list[str]:
     """Reorder WhiteBIT candle [time, open, close, high, low, volume]
     to standard OHLCV [timestamp, open, high, low, close, volume]."""
-    return [str(candle[0]), str(candle[1]), str(candle[3]), str(candle[4]), str(candle[2]), str(candle[5])]
+    return [
+        str(candle[0]),
+        str(candle[1]),
+        str(candle[3]),
+        str(candle[4]),
+        str(candle[2]),
+        str(candle[5]),
+    ]
 
 
 def save_candles(candles: list[list], pair: str, interval: str, data_dir: str) -> None:
@@ -301,7 +308,9 @@ def run_funding(pair: str, data_dir: str = "data") -> int:
 
     while True:
         start_date = (last_ts + 1) if last_ts is not None else None
-        records = fetch_funding_rates(pair, limit=FUNDING_MAX_LIMIT, offset=offset, start_date=start_date)
+        records = fetch_funding_rates(
+            pair, limit=FUNDING_MAX_LIMIT, offset=offset, start_date=start_date
+        )
 
         if not records:
             break
@@ -397,9 +406,7 @@ def save_orderbook_snapshot(
             writer.writerow([int(timestamp), "ask", price, qty])
 
 
-async def run_orderbook(
-    pair: str, duration: str, output_dir: str = "data"
-) -> int:
+async def run_orderbook(pair: str, duration: str, output_dir: str = "data") -> int:
     """Connect to WhiteBIT WebSocket and capture order book snapshots.
 
     Subscribes to L2 depth updates for the given pair and saves
@@ -424,11 +431,13 @@ async def run_orderbook(
     start_time = time.time()
 
     async with websockets.connect(WHITEBIT_WS_URL) as ws:
-        subscribe_msg = json.dumps({
-            "id": 1,
-            "method": "depth_subscribe",
-            "params": [pair, 10, "0"],
-        })
+        subscribe_msg = json.dumps(
+            {
+                "id": 1,
+                "method": "depth_subscribe",
+                "params": [pair, 10, "0"],
+            }
+        )
         await ws.send(subscribe_msg)
 
         while time.time() - start_time < duration_sec:
@@ -475,15 +484,11 @@ def build_parser():
     """Build the CLI argument parser."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="WhiteBIT candle data collector for signal-lab"
-    )
+    parser = argparse.ArgumentParser(description="WhiteBIT candle data collector for signal-lab")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     candles_parser = subparsers.add_parser("candles", help="Fetch candle data")
-    candles_parser.add_argument(
-        "--pair", required=True, help="Trading pair (e.g. ETH_USDT)"
-    )
+    candles_parser.add_argument("--pair", required=True, help="Trading pair (e.g. ETH_USDT)")
     candles_parser.add_argument(
         "--interval", required=True, help="Candle interval (e.g. 4h, 1h, 1d)"
     )
@@ -492,17 +497,13 @@ def build_parser():
     )
 
     funding_parser = subparsers.add_parser("funding", help="Fetch funding rate data")
-    funding_parser.add_argument(
-        "--pair", required=True, help="Trading pair (e.g. BTC_USDT)"
-    )
+    funding_parser.add_argument("--pair", required=True, help="Trading pair (e.g. BTC_USDT)")
     funding_parser.add_argument(
         "--output-dir", default="data", help="Output directory (default: data)"
     )
 
     orderbook_parser = subparsers.add_parser("orderbook", help="Collect order book snapshots")
-    orderbook_parser.add_argument(
-        "--pair", required=True, help="Trading pair (e.g. BTC_USDT)"
-    )
+    orderbook_parser.add_argument("--pair", required=True, help="Trading pair (e.g. BTC_USDT)")
     orderbook_parser.add_argument(
         "--duration", required=True, help="Collection duration (e.g. 1h, 30m)"
     )

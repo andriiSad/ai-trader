@@ -139,9 +139,7 @@ def main():
         config = yaml.safe_load(f)
 
     feature_sets = (
-        args.feature_set.split(",")
-        if args.feature_set
-        else config.get("feature_sets", ["ohlcv"])
+        args.feature_set.split(",") if args.feature_set else config.get("feature_sets", ["ohlcv"])
     )
     feature_kwargs = {
         "data_dir": config.get("data_dir", "data"),
