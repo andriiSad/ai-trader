@@ -1,5 +1,4 @@
 import numpy as np
-
 from src.models.lstm import create_sequences, train_lstm
 
 

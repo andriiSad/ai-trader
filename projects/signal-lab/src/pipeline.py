@@ -147,8 +147,8 @@ def _upload_comparison_table(results: dict[str, Any], project: str) -> None:
     try:
         import wandb
 
-        run = wandb.init(project=project, name="model-comparison",
-                         settings=wandb.Settings(_disable_stats=True, _disable_meta=True))
+        wandb.init(project=project, name="model-comparison",
+                   settings=wandb.Settings(_disable_stats=True, _disable_meta=True))
         columns = ["Model", "Avg Accuracy", "Avg F1", "Folds"]
         data = []
         for _key, info in results.items():
