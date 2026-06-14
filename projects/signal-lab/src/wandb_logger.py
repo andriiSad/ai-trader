@@ -14,11 +14,12 @@ def init_run(
     try:
         import wandb
 
+        if wandb.run is not None:
+            wandb.finish()
         wandb.init(
             project=project,
             name=model_name,
             config=config or {},
-            reinit=True,
         )
     except Exception as e:
         logger.warning(f"wandb init_run failed (no-op): {e}")
