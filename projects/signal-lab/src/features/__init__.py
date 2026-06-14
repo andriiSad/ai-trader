@@ -36,7 +36,8 @@ def compose(*feature_dfs: pd.DataFrame) -> pd.DataFrame:
 
 
 def generate_features(df: pd.DataFrame) -> pd.DataFrame:
-    return _ohlcv_generate(df)
+    result = _ohlcv_generate(df)
+    return result.dropna().reset_index(drop=True)
 
 
 def load_module(name: str):

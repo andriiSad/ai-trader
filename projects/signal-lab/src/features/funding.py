@@ -43,6 +43,13 @@ def generate(df: pd.DataFrame, data_dir: str = "data", pair: str = "BTC_USDT", *
     candle_ts = df[["timestamp"]].copy()
     candle_ts["timestamp"] = candle_ts["timestamp"].astype(int)
 
+    candle_max = candle_ts["timestamp"].max()
+    funding_max = funding_df["timestamp"].max()
+    if candle_max > 1e12 and funding_max < 1e12:
+        funding_df["timestamp"] = funding_df["timestamp"] * 1000
+    elif candle_max < 1e12 and funding_max > 1e12:
+        funding_df["timestamp"] = funding_df["timestamp"] // 1000
+
     merged = candle_ts.merge(
         funding_df[["timestamp", "funding_rate"]],
         on="timestamp",
@@ -50,8 +57,6 @@ def generate(df: pd.DataFrame, data_dir: str = "data", pair: str = "BTC_USDT", *
     )
 
     merged["funding_rate"] = merged["funding_rate"].ffill()
-
-    merged = merged.dropna(subset=["funding_rate"])
 
     if merged.empty:
         return df[["timestamp"]].iloc[0:0].copy().assign(
@@ -68,5 +73,4 @@ def generate(df: pd.DataFrame, data_dir: str = "data", pair: str = "BTC_USDT", *
     result["funding_rate_roc"] = (merged["funding_rate"] - prev) / prev.abs()
 
     result = result.replace([np.inf, -np.inf], np.nan)
-    result = result.dropna()
     return result.reset_index(drop=True)

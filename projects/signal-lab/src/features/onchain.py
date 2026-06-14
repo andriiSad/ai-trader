@@ -33,5 +33,4 @@ def generate(df: pd.DataFrame, seed: int = 42, **kwargs) -> pd.DataFrame:
     result["netflow_zscore_20"] = (result["netflow_raw"] - rolling_mean) / rolling_std
     result = result.drop(columns=["netflow"])
     result = result.replace([np.inf, -np.inf], np.nan)
-    result = result.dropna()
     return result.reset_index(drop=True)

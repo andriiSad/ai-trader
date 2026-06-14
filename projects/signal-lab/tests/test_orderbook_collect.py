@@ -5,7 +5,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from src.collect import (
     build_parser,
     parse_ws_depth_message,
@@ -176,43 +175,40 @@ class TestBuildParserOrderbook:
 class TestRunOrderbook:
     def test_saves_snapshots_to_files(self):
         """Test that run_orderbook saves snapshots received via WebSocket."""
-        from src.collect import run_orderbook
-
         snapshot1 = _make_depth_snapshot(timestamp=1718000060.0)
         snapshot2 = _make_depth_snapshot(timestamp=1718000120.0)
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            mock_ws = AsyncMock()
-            mock_ws.__aenter__ = AsyncMock(return_value=mock_ws)
-            mock_ws.__aexit__ = AsyncMock(return_value=False)
+        mock_ws = AsyncMock()
+        mock_ws.__aenter__ = AsyncMock(return_value=mock_ws)
+        mock_ws.__aexit__ = AsyncMock(return_value=False)
 
-            call_count = 0
+        call_count = 0
 
-            async def mock_recv():
-                nonlocal call_count
-                call_count += 1
-                if call_count == 1:
-                    return json.dumps({"id": 1, "result": {"status": "success"}})
-                elif call_count == 2:
-                    return json.dumps(snapshot1)
-                elif call_count == 3:
-                    return json.dumps(snapshot2)
-                else:
-                    raise Exception("done")
+        async def mock_recv():
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return json.dumps({"id": 1, "result": {"status": "success"}})
+            elif call_count == 2:
+                return json.dumps(snapshot1)
+            elif call_count == 3:
+                return json.dumps(snapshot2)
+            else:
+                raise Exception("done")
 
-            mock_ws.recv = mock_recv
-            mock_ws.send = AsyncMock()
+        mock_ws.recv = mock_recv
+        mock_ws.send = AsyncMock()
 
-            with patch("src.collect.websockets", create=True) as mock_ws_mod:
-                mock_ws_mod.connect = MagicMock(return_value=_async_context_manager(mock_ws))
-                with patch("src.collect.time") as mock_time:
-                    mock_time.time = MagicMock(side_effect=[1718000000, 1718000001, 1718000061, 1718000121, 1718000180])
-                    mock_time.sleep = MagicMock()
-                    with patch("src.collect.asyncio") as mock_asyncio:
-                        mock_asyncio.get_event_loop = MagicMock(return_value=_mock_event_loop())
+        with patch("src.collect.websockets", create=True) as mock_ws_mod:
+            mock_ws_mod.connect = MagicMock(return_value=_async_context_manager(mock_ws))
+            with patch("src.collect.time") as mock_time:
+                mock_time.time = MagicMock(side_effect=[1718000000, 1718000001, 1718000061, 1718000121, 1718000180])
+                mock_time.sleep = MagicMock()
+                with patch("src.collect.asyncio") as mock_asyncio:
+                    mock_asyncio.get_event_loop = MagicMock(return_value=_mock_event_loop())
 
-                        # We can't easily test the full async flow, so test save_orderbook_snapshot directly
-                        pass
+                    # We can't easily test the full async flow, so test save_orderbook_snapshot directly
+                    pass
 
     def test_save_creates_separate_files_per_snapshot(self):
         with tempfile.TemporaryDirectory() as tmpdir:

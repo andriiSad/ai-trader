@@ -85,10 +85,10 @@ class TestFundingGenerate:
 
             result = generate(df, data_dir=tmpdir)
 
-        # Should have fewer rows than input (dropped warmup)
-        assert len(result) < len(candle_ts)
-        # All timestamps should be >= first funding timestamp
-        assert result["timestamp"].min() >= candle_ts[4]
+        # Rows before first funding have NaN (compose will drop them)
+        assert pd.isna(result["funding_rate_raw"].iloc[0])
+        # Rows after first funding have values
+        assert result["funding_rate_raw"].iloc[4:].notna().all()
 
     def test_no_nans_in_output(self):
         candle_ts = _make_candle_ts(20)
@@ -103,7 +103,8 @@ class TestFundingGenerate:
 
             result = generate(df, data_dir=tmpdir)
 
-        assert not result.isna().any().any()
+        # No NaN after first funding row (compose handles dropping warmup)
+        assert not result["funding_rate_raw"].iloc[1:].isna().any()
 
     def test_cum_3_is_rolling_sum(self):
         candle_ts = _make_candle_ts(12)
@@ -119,16 +120,15 @@ class TestFundingGenerate:
 
             result = generate(df, data_dir=tmpdir)
 
-        cum_values = result["funding_rate_cum_3"].values
+        cum_values = result["funding_rate_cum_3"].dropna().values
 
-        # After forward-fill and dropna of cum_3 warmup, first row is at 3rd candle
-        # Rolling sum of 3 forward-filled values: 0.0001, 0.0001, 0.0002 = 0.0004
+        # Rolling sum of 3 forward-filled values
         assert cum_values[0] == pytest.approx(0.0001 + 0.0001 + 0.0002, abs=1e-8)
 
     def test_roc_is_rate_of_change(self):
-        candle_ts = _make_candle_ts(8)
+        candle_ts = _make_candle_ts(12)
         funding_ts = candle_ts[::2]
-        rates = ["0.0001", "0.0002", "0.0003", "0.0001"]
+        rates = ["0.0001", "0.0002", "0.0003", "0.0001", "0.0004", "0.0002"]
         funding_records = list(zip(funding_ts, rates, strict=True))
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -139,11 +139,13 @@ class TestFundingGenerate:
 
             result = generate(df, data_dir=tmpdir)
 
-        # First ROC value (after dropna): (0.0002 - 0.0001) / abs(0.0001) = 1.0
-        # (the 0.0001 was forward-filled from the first funding rate)
-        assert result.iloc[0]["funding_rate_roc"] == pytest.approx(1.0, abs=1e-8)
-        # Second distinct change: (0.0003 - 0.0002) / abs(0.0002) = 0.5
-        assert result.iloc[2]["funding_rate_roc"] == pytest.approx(0.5, abs=1e-8)
+        roc = result["funding_rate_roc"].dropna()
+        # At candle 1 (ffill, same as candle 0): ROC = 0.0
+        assert roc.iloc[0] == pytest.approx(0.0, abs=1e-8)
+        # At candle 2 (second funding 0.0002 vs ffill 0.0001): ROC = 1.0
+        assert roc.iloc[1] == pytest.approx(1.0, abs=1e-8)
+        # At candle 4 (third funding 0.0003 vs ffill 0.0002): ROC = 0.5
+        assert roc.iloc[3] == pytest.approx(0.5, abs=1e-8)
 
     def test_missing_funding_file_returns_empty(self):
         candle_ts = _make_candle_ts(10)

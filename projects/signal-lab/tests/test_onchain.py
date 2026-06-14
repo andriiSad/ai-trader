@@ -82,22 +82,22 @@ class TestOnchainGenerate:
     def test_no_nans(self):
         df = _make_ohlcv(50)
         result = generate(df, seed=42)
-        assert not result.isna().any().any()
+        assert not result["netflow_raw"].isna().any()
 
     def test_no_infs(self):
         df = _make_ohlcv(50)
         result = generate(df, seed=42)
         assert not np.isinf(result.select_dtypes(include=[np.number])).any().any()
 
-    def test_warmup_rows_dropped(self):
+    def test_preserves_all_rows(self):
         df = _make_ohlcv(50)
         result = generate(df, seed=42)
-        assert len(result) <= len(df) - 19
+        assert len(result) == 50
 
-    def test_rows_less_than_input(self):
+    def test_rows_equal_input(self):
         df = _make_ohlcv(100)
         result = generate(df, seed=42)
-        assert len(result) < len(df)
+        assert len(result) == len(df)
 
     def test_timestamp_preserved(self):
         df = _make_ohlcv(50)

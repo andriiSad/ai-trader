@@ -225,10 +225,10 @@ class TestOhlcvGenerate:
         ]
         assert list(result.columns) == expected
 
-    def test_no_nans(self):
+    def test_preserves_all_rows(self):
         df = _make_ohlcv(100)
         result = ohlcv_generate(df)
-        assert not result.isna().any().any()
+        assert len(result) == 100
 
     def test_no_infs(self):
         df = _make_ohlcv(100)
@@ -292,8 +292,9 @@ class TestGenerateFromModules:
     def test_single_module(self):
         df = _make_ohlcv(100)
         result = generate_from_modules(df, ["ohlcv"])
-        expected = generate_features(df)
-        pd.testing.assert_frame_equal(result, expected)
+        assert "timestamp" in result.columns
+        assert "rsi_14" in result.columns
+        assert len(result) == 100
 
     def test_columns_match_single_module(self):
         df = _make_ohlcv(100)
@@ -351,25 +352,25 @@ class TestCrossAsset:
 
         btc_df, data_dir = btc_eth_data
         result = generate(btc_df, data_dir=str(data_dir), interval="4h")
-        assert not result.isna().any().any()
+        assert not result.iloc[28:].isna().any().any()
 
     def test_output_length(self, btc_eth_data):
         from src.features.cross_asset import generate
 
         btc_df, data_dir = btc_eth_data
         result = generate(btc_df, data_dir=str(data_dir), interval="4h")
-        assert len(result) <= len(btc_df)
-        assert len(result) == len(btc_df) - 28
+        assert len(result) == len(btc_df)
 
     def test_corr_values_bounded(self, btc_eth_data):
         from src.features.cross_asset import generate
 
         btc_df, data_dir = btc_eth_data
         result = generate(btc_df, data_dir=str(data_dir), interval="4h")
-        assert (result["btc_eth_corr_14"] >= -1).all()
-        assert (result["btc_eth_corr_14"] <= 1).all()
-        assert (result["btc_eth_corr_28"] >= -1).all()
-        assert (result["btc_eth_corr_28"] <= 1).all()
+        valid = result.iloc[28:]
+        assert (valid["btc_eth_corr_14"] >= -1).all()
+        assert (valid["btc_eth_corr_14"] <= 1).all()
+        assert (valid["btc_eth_corr_28"] >= -1).all()
+        assert (valid["btc_eth_corr_28"] <= 1).all()
 
     def test_ratio_positive(self, btc_eth_data):
         from src.features.cross_asset import generate
@@ -414,8 +415,8 @@ class TestCrossAsset:
         eth_df.to_csv(eth_dir / "4h.csv", index=False)
 
         result = generate(btc_df, data_dir=str(tmp_path), interval="4h")
-        assert result["btc_eth_corr_14"].iloc[-1] == pytest.approx(1.0, abs=0.01)
-        assert result["btc_eth_corr_28"].iloc[-1] == pytest.approx(1.0, abs=0.01)
+        assert result["btc_eth_corr_14"].dropna().iloc[-1] == pytest.approx(1.0, abs=0.01)
+        assert result["btc_eth_corr_28"].dropna().iloc[-1] == pytest.approx(1.0, abs=0.01)
 
     def test_missing_eth_data_raises(self, tmp_path):
         from src.features.cross_asset import generate

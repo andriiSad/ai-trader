@@ -107,5 +107,4 @@ def generate(
 ) -> pd.DataFrame:
     snapshots = _load_orderbook_snapshots(data_dir, pair)
     result = _aggregate_snapshots(snapshots, df["timestamp"])
-    result = result.dropna().reset_index(drop=True)
     return result
