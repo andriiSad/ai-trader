@@ -19,6 +19,12 @@ def load_results(results_path: str):
         return json.load(f)
 
 
+@st.cache_data
+def run_backtest_cached(config_json: str):
+    config = json.loads(config_json)
+    return run_backtest(config)
+
+
 def main():
     st.title("Backtester Dashboard")
 
@@ -36,19 +42,13 @@ def main():
     threshold = st.sidebar.slider(
         "Probability Threshold", 0.0, 1.0, config["strategy"]["threshold"], 0.01
     )
-    st.sidebar.checkbox("Long Only", value=config["strategy"]["long_only"])
+    long_only = st.sidebar.checkbox("Long Only", value=config["strategy"]["long_only"])
 
-    results_path = config["output"]["results_path"]
-    try:
-        results = load_results(results_path)
-    except FileNotFoundError:
-        st.info(
-            "No saved results found. Run `python backtester.py run` first, or click 'Run Backtest' below."
-        )
-        if st.button("Run Backtest"):
-            results = run_backtest(config)
-            st.rerun()
-        return
+    config["strategy"]["threshold"] = threshold
+    config["strategy"]["long_only"] = long_only
+
+    config_json = json.dumps(config, sort_keys=True)
+    results = run_backtest_cached(config_json)
 
     overall = results["overall"]
     first_pair = list(overall.keys())[0]
@@ -65,6 +65,16 @@ def main():
 
     pair = st.selectbox("Select Pair", list(overall.keys()))
     pair_data = results["per_pair"][pair]
+    pair_metrics = pair_data["metrics"]
+
+    st.subheader(f"Key Metrics — {pair}")
+    pc1, pc2, pc3, pc4, pc5, pc6 = st.columns(6)
+    pc1.metric("Sharpe", f"{pair_metrics['sharpe']:.2f}")
+    pc2.metric("Max DD", f"{pair_metrics['max_drawdown'] * 100:.1f}%")
+    pc3.metric("Win Rate", f"{pair_metrics['win_rate'] * 100:.1f}%")
+    pc4.metric("Profit Factor", f"{pair_metrics['profit_factor']:.2f}")
+    pc5.metric("Total Return", f"{pair_metrics['total_return'] * 100:.1f}%")
+    pc6.metric("Trades", pair_metrics["num_trades"])
 
     st.header("Per-Fold Results")
     fold_df = build_fold_metrics_table(pair_data["per_fold"])
@@ -77,19 +87,14 @@ def main():
     st.header("Benchmark Comparison")
     bench = pair_data["benchmark"]
     bcol1, bcol2, bcol3 = st.columns(3)
-    bcol1.metric("Strategy Return", f"{metrics['total_return'] * 100:.1f}%")
+    bcol1.metric("Strategy Return", f"{pair_metrics['total_return'] * 100:.1f}%")
     bcol2.metric("Buy & Hold Return", f"{bench['total_return'] * 100:.1f}%")
-    outperformance = metrics["total_return"] - bench["total_return"]
+    outperformance = pair_metrics["total_return"] - bench["total_return"]
     bcol3.metric(
         "Outperformance",
         f"{outperformance * 100:.1f}%",
         delta=f"{outperformance * 100:.1f}%",
     )
-
-    st.header("Threshold Tuning")
-    st.write("Adjust the threshold slider in the sidebar to see how it affects performance.")
-    if threshold != config["strategy"]["threshold"]:
-        st.warning(f"Threshold changed to {threshold}. Re-run backtest to see updated results.")
 
 
 if __name__ == "__main__":
