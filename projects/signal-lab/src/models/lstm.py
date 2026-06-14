@@ -79,6 +79,9 @@ def train_lstm(
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
+    logger.info(f"    LSTM: device={device}, train_samples={len(X_train_seq)}, "
+                f"val_samples={len(X_val_seq)}, test_samples={len(X_test_seq)}")
+
     best_val_loss = float("inf")
     patience_counter = 0
     best_state = None
@@ -108,7 +111,7 @@ def train_lstm(
                 n_batches += 1
         val_loss /= n_batches
 
-        if epoch % 10 == 0 or val_loss < best_val_loss:
+        if epoch == 0 or epoch % 10 == 0 or val_loss < best_val_loss:
             logger.info(
                 f"    Epoch {epoch:3d}: train_loss={train_loss / n_train_batches:.4f}, "
                 f"val_loss={val_loss:.4f}, patience={patience_counter}/{patience}"
