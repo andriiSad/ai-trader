@@ -32,7 +32,5 @@ def load_candles(data_dir: str, pair: str, interval: str) -> pd.DataFrame:
     return df
 
 
-def load_all_candles(
-    data_dir: str, pairs: list[str], interval: str
-) -> dict[str, pd.DataFrame]:
+def load_all_candles(data_dir: str, pairs: list[str], interval: str) -> dict[str, pd.DataFrame]:
     return {pair: load_candles(data_dir, pair, interval) for pair in pairs}
