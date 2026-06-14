@@ -53,6 +53,12 @@ def run_pipeline(
         logger.info(f"Training {model_name}...")
         model_results: list[dict[str, Any]] = []
 
+        init_run(
+            project=wandb_project,
+            model_name=model_key,
+            config={"model": model_key},
+        )
+
         for fold_idx, (train_df, test_df) in enumerate(split(merged)):
             logger.info(f"  Fold {fold_idx}")
 
@@ -68,24 +74,15 @@ def run_pipeline(
             X_train = X_train_scaled.values
             X_test = X_test_scaled.values
 
-            init_run(
-                project=wandb_project,
-                model_name=model_key,
-                fold_idx=fold_idx,
-                config={"model": model_key, "fold": fold_idx},
-            )
-
             result = _train_model(model_key, X_train, y_train, X_test, y_test)
             metrics = result["metrics"]
 
-            log_metrics(metrics, step=fold_idx)
+            log_metrics({f"fold_{fold_idx}/{k}": v for k, v in metrics.items()}, step=fold_idx)
 
             if "feature_importance" in result:
                 names = [fi[0] for fi in result["feature_importance"]]
                 importances = [fi[1] for fi in result["feature_importance"]]
                 log_feature_importance(names, importances)
-
-            finish_run()
 
             model_results.append({"fold": fold_idx, "metrics": metrics})
             logger.info(
@@ -95,7 +92,10 @@ def run_pipeline(
         if model_results:
             avg_acc = sum(r["metrics"]["accuracy"] for r in model_results) / len(model_results)
             avg_f1 = sum(r["metrics"]["f1"] for r in model_results) / len(model_results)
+            log_metrics({"avg_accuracy": avg_acc, "avg_f1": avg_f1})
             logger.info(f"{model_name}: avg accuracy={avg_acc:.4f}, avg f1={avg_f1:.4f}")
+
+        finish_run()
 
         results[model_key] = {
             "model_name": model_name,

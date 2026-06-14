@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 def init_run(
     project: str = "signal-lab",
     model_name: str = "model",
-    fold_idx: int = 0,
     config: dict[str, Any] | None = None,
 ) -> None:
     try:
@@ -17,7 +16,7 @@ def init_run(
 
         wandb.init(
             project=project,
-            name=f"{model_name}-fold-{fold_idx}",
+            name=model_name,
             config=config or {},
             reinit=True,
         )

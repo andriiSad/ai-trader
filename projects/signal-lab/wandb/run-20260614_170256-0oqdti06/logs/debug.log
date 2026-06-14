@@ -1,0 +1,21 @@
+2026-06-14 17:02:56,715 INFO    MainThread:69118 [wandb_init.py:setup_run_log_directory():723] Logging user logs to /Users/andriisadovyi/Desktop/ai-trader/projects/signal-lab/wandb/run-20260614_170256-0oqdti06/logs/debug.log
+2026-06-14 17:02:56,716 INFO    MainThread:69118 [wandb_init.py:setup_run_log_directory():724] Logging internal logs to /Users/andriisadovyi/Desktop/ai-trader/projects/signal-lab/wandb/run-20260614_170256-0oqdti06/logs/debug-internal.log
+2026-06-14 17:02:56,716 INFO    MainThread:69118 [wandb_init.py:init():766] calling init triggers
+2026-06-14 17:02:56,716 INFO    MainThread:69118 [wandb_init.py:init():771] wandb.init called with sweep_config: {}
+config: {'model': 'lr', 'fold': 2, '_wandb': {}}
+2026-06-14 17:02:56,716 INFO    MainThread:69118 [wandb_init.py:init():814] starting backend
+2026-06-14 17:02:56,716 INFO    MainThread:69118 [wandb_init.py:init():829] sending inform_init request
+2026-06-14 17:02:57,031 INFO    MainThread:69118 [wandb_init.py:init():834] backend started and connected
+2026-06-14 17:02:57,032 INFO    MainThread:69118 [wandb_init.py:init():904] updated telemetry
+2026-06-14 17:02:57,047 INFO    MainThread:69118 [wandb_init.py:init():927] communicating run to backend with 90.0 second timeout
+2026-06-14 17:02:57,410 INFO    MainThread:69118 [wandb_init.py:init():972] starting run threads in backend
+2026-06-14 17:02:57,456 INFO    MainThread:69118 [wandb_run.py:_console_start():2523] atexit reg
+2026-06-14 17:02:57,457 INFO    MainThread:69118 [wandb_run.py:_redirect():2373] redirect: wrap_raw
+2026-06-14 17:02:57,457 INFO    MainThread:69118 [wandb_run.py:_redirect():2442] Wrapping output streams.
+2026-06-14 17:02:57,457 INFO    MainThread:69118 [wandb_run.py:_redirect():2465] Redirects installed.
+2026-06-14 17:02:57,457 INFO    MainThread:69118 [wandb_init.py:init():1010] run started, returning control to user process
+2026-06-14 17:02:58,018 INFO    MainThread:69118 [wandb_run.py:_finish():2285] finishing run andrii-sadovyi-dev2000-go/signal-lab/0oqdti06
+2026-06-14 17:02:58,018 INFO    MainThread:69118 [wandb_run.py:_atexit_cleanup():2490] got exitcode: 0
+2026-06-14 17:02:58,018 INFO    MainThread:69118 [wandb_run.py:_restore():2472] restore
+2026-06-14 17:02:58,018 INFO    MainThread:69118 [wandb_run.py:_restore():2478] restore done
+2026-06-14 17:03:00,792 INFO    MainThread:69118 [wandb_run.py:_footer_sync_info():3891] logging synced files
