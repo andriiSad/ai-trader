@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.metrics import compute_metrics
+
+logger = logging.getLogger(__name__)
 
 
 class LSTMModel(nn.Module):
@@ -79,8 +83,10 @@ def train_lstm(
     patience_counter = 0
     best_state = None
 
-    for _epoch in range(max_epochs):
+    for epoch in range(max_epochs):
         model.train()
+        train_loss = 0.0
+        n_train_batches = 0
         for X_batch, y_batch in train_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             optimizer.zero_grad()
@@ -88,6 +94,8 @@ def train_lstm(
             loss = criterion(output, y_batch)
             loss.backward()
             optimizer.step()
+            train_loss += loss.item()
+            n_train_batches += 1
 
         model.eval()
         val_loss = 0.0
@@ -99,6 +107,12 @@ def train_lstm(
                 val_loss += criterion(output, y_batch).item()
                 n_batches += 1
         val_loss /= n_batches
+
+        if epoch % 10 == 0 or val_loss < best_val_loss:
+            logger.info(
+                f"    Epoch {epoch:3d}: train_loss={train_loss / n_train_batches:.4f}, "
+                f"val_loss={val_loss:.4f}, patience={patience_counter}/{patience}"
+            )
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
