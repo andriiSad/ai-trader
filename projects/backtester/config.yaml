@@ -1,0 +1,23 @@
+pairs:
+  - BTC_USDT
+  - ETH_USDT
+
+interval: 5m
+predictions_path: ../../data/reports/predictions.csv
+candles_dir: ../../data
+
+strategy:
+  threshold: 0.55
+  long_only: true
+
+costs:
+  fee_pct: 0.1
+  slippage_pct: 0.05
+
+position:
+  risk_per_trade: 0.01
+  max_duration_candles: 12
+
+output:
+  results_path: data/reports/backtest_results.json
+  tear_sheet_path: data/reports/tear_sheet.html
