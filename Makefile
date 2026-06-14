@@ -1,10 +1,11 @@
-.PHONY: test lint format install install-scraper install-dev
+.PHONY: test lint format install install-scraper install-signal-lab install-dev
 
 # Run all tests
 test:
 	cd projects/scraper && python3 -m pytest tests/ -v --tb=short
 	cd projects/trainer && python3 -m pytest tests/ -v --tb=short
 	cd projects/backtester && python3 -m pytest tests/ -v --tb=short
+	cd projects/signal-lab && python3 -m pytest tests/ -v --tb=short
 
 # Run tests with coverage
 test-cover:
@@ -21,6 +22,10 @@ format:
 # Install scraper dependencies
 install-scraper:
 	cd projects/scraper && pip install -r requirements.txt
+
+# Install signal-lab dependencies
+install-signal-lab:
+	cd projects/signal-lab && pip install -r requirements.txt
 
 # Install dev tools (ruff, pytest)
 install-dev:
