@@ -3,15 +3,7 @@ import json
 import streamlit as st
 import yaml
 
-from src.benchmark import buy_and_hold_returns  # noqa: F401
-from src.charts import (
-    build_drawdown_chart,  # noqa: F401
-    build_equity_curve_chart,  # noqa: F401
-    build_fold_metrics_table,
-    build_pair_metrics_table,
-    build_trade_markers_chart,  # noqa: F401
-)
-from src.data_loader import load_all_candles, load_predictions  # noqa: F401
+from src.charts import build_fold_metrics_table, build_pair_metrics_table
 from src.pipeline import run_backtest
 
 st.set_page_config(page_title="Backtester Dashboard", layout="wide")
