@@ -43,15 +43,24 @@ def train_lstm(
     max_epochs: int = 100,
     patience: int = 20,
     batch_size: int = 64,
+    val_split: float = 0.2,
 ) -> dict:
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
     X_train_seq, y_train_seq = create_sequences(X_train, y_train, seq_len)
     X_test_seq, y_test_seq = create_sequences(X_test, y_test, seq_len)
 
+    n_val = max(1, int(len(X_train_seq) * val_split))
+    X_val_seq, y_val_seq = X_train_seq[-n_val:], y_train_seq[-n_val:]
+    X_train_seq, y_train_seq = X_train_seq[:-n_val], y_train_seq[:-n_val]
+
     train_ds = TensorDataset(
         torch.tensor(X_train_seq, dtype=torch.float32),
         torch.tensor(y_train_seq, dtype=torch.float32),
+    )
+    val_ds = TensorDataset(
+        torch.tensor(X_val_seq, dtype=torch.float32),
+        torch.tensor(y_val_seq, dtype=torch.float32),
     )
     test_ds = TensorDataset(
         torch.tensor(X_test_seq, dtype=torch.float32),
@@ -59,13 +68,14 @@ def train_lstm(
     )
 
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False)
 
     model = LSTMModel(input_size=X_train.shape[1], hidden_size=hidden_size).to(device)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    best_test_loss = float("inf")
+    best_val_loss = float("inf")
     patience_counter = 0
     best_state = None
 
@@ -80,18 +90,18 @@ def train_lstm(
             optimizer.step()
 
         model.eval()
-        test_loss = 0.0
+        val_loss = 0.0
         n_batches = 0
         with torch.no_grad():
-            for X_batch, y_batch in test_loader:
+            for X_batch, y_batch in val_loader:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
                 output = model(X_batch)
-                test_loss += criterion(output, y_batch).item()
+                val_loss += criterion(output, y_batch).item()
                 n_batches += 1
-        test_loss /= n_batches
+        val_loss /= n_batches
 
-        if test_loss < best_test_loss:
-            best_test_loss = test_loss
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
             patience_counter = 0
             best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
         else:

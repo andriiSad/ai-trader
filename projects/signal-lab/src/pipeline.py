@@ -56,11 +56,17 @@ def run_pipeline(
         for fold_idx, (train_df, test_df) in enumerate(split(merged)):
             logger.info(f"  Fold {fold_idx}")
 
-            scaler = fit_scaler(train_df[feature_cols])
-            X_train = transform(train_df[feature_cols], scaler).values
-            X_test = transform(test_df[feature_cols], scaler).values
-            y_train = train_df["label"].values[: len(X_train)]
-            y_test = test_df["label"].values[: len(X_test)]
+            train_features = train_df[feature_cols]
+            test_features = test_df[feature_cols]
+
+            scaler = fit_scaler(train_features)
+            X_train_scaled = transform(train_features, scaler)
+            X_test_scaled = transform(test_features, scaler)
+
+            y_train = train_df.loc[X_train_scaled.index, "label"].values
+            y_test = test_df.loc[X_test_scaled.index, "label"].values
+            X_train = X_train_scaled.values
+            X_test = X_test_scaled.values
 
             init_run(
                 project=wandb_project,

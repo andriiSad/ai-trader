@@ -31,10 +31,13 @@ def _run_train_lr(df, config):
     accuracies = []
     for fold_idx, (train_df, test_df) in enumerate(split(merged)):
         scaler = fit_scaler(train_df[feature_cols])
-        X_train = transform(train_df[feature_cols], scaler).values
-        X_test = transform(test_df[feature_cols], scaler).values
-        y_train = train_df["label"].values[: len(X_train)]
-        y_test = test_df["label"].values[: len(X_test)]
+        X_train_scaled = transform(train_df[feature_cols], scaler)
+        X_test_scaled = transform(test_df[feature_cols], scaler)
+
+        y_train = train_df.loc[X_train_scaled.index, "label"].values
+        y_test = test_df.loc[X_test_scaled.index, "label"].values
+        X_train = X_train_scaled.values
+        X_test = X_test_scaled.values
 
         result = train_logistic(X_train, y_train, X_test, y_test)
         print_fold_summary("Logistic Regression", fold_idx, result["metrics"])
@@ -57,10 +60,13 @@ def _run_train_lgbm(df, config):
     accuracies = []
     for fold_idx, (train_df, test_df) in enumerate(split(merged)):
         scaler = fit_scaler(train_df[feature_cols])
-        X_train = transform(train_df[feature_cols], scaler).values
-        X_test = transform(test_df[feature_cols], scaler).values
-        y_train = train_df["label"].values[: len(X_train)]
-        y_test = test_df["label"].values[: len(X_test)]
+        X_train_scaled = transform(train_df[feature_cols], scaler)
+        X_test_scaled = transform(test_df[feature_cols], scaler)
+
+        y_train = train_df.loc[X_train_scaled.index, "label"].values
+        y_test = test_df.loc[X_test_scaled.index, "label"].values
+        X_train = X_train_scaled.values
+        X_test = X_test_scaled.values
 
         result = train_lightgbm(X_train, y_train, X_test, y_test)
         print_fold_summary("LightGBM", fold_idx, result["metrics"])
@@ -88,10 +94,13 @@ def _run_train_lstm(df, config):
     accuracies = []
     for fold_idx, (train_df, test_df) in enumerate(split(merged)):
         scaler = fit_scaler(train_df[feature_cols])
-        X_train = transform(train_df[feature_cols], scaler).values
-        X_test = transform(test_df[feature_cols], scaler).values
-        y_train = train_df["label"].values[: len(X_train)]
-        y_test = test_df["label"].values[: len(X_test)]
+        X_train_scaled = transform(train_df[feature_cols], scaler)
+        X_test_scaled = transform(test_df[feature_cols], scaler)
+
+        y_train = train_df.loc[X_train_scaled.index, "label"].values
+        y_test = test_df.loc[X_test_scaled.index, "label"].values
+        X_train = X_train_scaled.values
+        X_test = X_test_scaled.values
 
         result = train_lstm(X_train, y_train, X_test, y_test)
         print_fold_summary("LSTM", fold_idx, result["metrics"])

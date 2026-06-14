@@ -6,7 +6,9 @@ import pandas as pd
 
 def fit_scaler(feature_df: pd.DataFrame) -> dict:
     numeric = feature_df.drop(columns=["timestamp"], errors="ignore")
-    return {"mean": numeric.mean(), "std": numeric.std()}
+    std = numeric.std()
+    std = std.replace(0, 1)
+    return {"mean": numeric.mean(), "std": std}
 
 
 def transform(feature_df: pd.DataFrame, scaler: dict) -> pd.DataFrame:
