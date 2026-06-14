@@ -122,8 +122,8 @@ def main():
     parser.add_argument(
         "--model",
         choices=MODEL_CHOICES,
-        default="lr",
-        help="Model to train (default: lr)",
+        default=None,
+        help="Model to train (default: all)",
     )
     args = parser.parse_args()
 
@@ -164,10 +164,6 @@ def main():
         logging.info(f"Saved {len(merged)} rows to {out_path}")
 
     elif args.command == "train":
-        if args.model not in ("lr", "lgbm", "lstm"):
-            logging.error(f"Model '{args.model}' not yet implemented. Use: lr, lgbm, lstm")
-            return
-
         pair = config["pair"]
         interval = config["interval"]
         data_dir = config.get("data_dir", "data")
@@ -175,15 +171,17 @@ def main():
         logging.info(f"Loading candles for {pair} {interval}...")
         df = load_candles(pair, interval, data_dir)
 
-        if args.model == "lr":
-            logging.info("Running walk-forward with Logistic Regression...")
-            _run_train_lr(df, config)
-        elif args.model == "lstm":
-            logging.info("Running walk-forward with LSTM...")
-            _run_train_lstm(df, config)
-        elif args.model == "lgbm":
-            logging.info("Running walk-forward with LightGBM...")
-            _run_train_lgbm(df, config)
+        models_to_run = [args.model] if args.model else ["lr", "lgbm", "lstm"]
+        for m in models_to_run:
+            if m == "lr":
+                logging.info("Running walk-forward with Logistic Regression...")
+                _run_train_lr(df, config)
+            elif m == "lstm":
+                logging.info("Running walk-forward with LSTM...")
+                _run_train_lstm(df, config)
+            elif m == "lgbm":
+                logging.info("Running walk-forward with LightGBM...")
+                _run_train_lgbm(df, config)
 
     elif args.command == "run":
         pair = config["pair"]
