@@ -20,6 +20,10 @@ def init_run(
             project=project,
             name=model_name,
             config=config or {},
+            settings=wandb.Settings(
+                _disable_stats=True,
+                _disable_meta=True,
+            ),
         )
     except Exception as e:
         logger.warning(f"wandb init_run failed (no-op): {e}")

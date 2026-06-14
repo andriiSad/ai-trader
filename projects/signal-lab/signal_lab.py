@@ -5,6 +5,9 @@ import argparse
 import logging
 import os
 
+os.environ["WANDB_DISABLE_STATS"] = "true"
+os.environ["WANDB_DISABLE_META"] = "true"
+
 import yaml
 from src.data import download_candles, load_candles
 from src.features import generate_features
