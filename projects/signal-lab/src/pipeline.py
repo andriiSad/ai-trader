@@ -7,12 +7,6 @@ import pandas as pd
 
 from src.scaler import fit_scaler, transform
 from src.walk_forward import split
-from src.wandb_logger import (
-    finish_run,
-    init_run,
-    log_feature_importance,
-    log_metrics,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +47,6 @@ def run_pipeline(
         logger.info(f"Training {model_name}...")
         model_results: list[dict[str, Any]] = []
 
-        init_run(
-            project=wandb_project,
-            model_name=model_key,
-            config={"model": model_key},
-        )
-
         for fold_idx, (train_df, test_df) in enumerate(split(merged)):
             logger.info(f"  Fold {fold_idx}")
 
@@ -77,42 +65,62 @@ def run_pipeline(
             result = _train_model(model_key, X_train, y_train, X_test, y_test)
             metrics = result["metrics"]
 
-            log_metrics({f"fold_{fold_idx}/{k}": v for k, v in metrics.items()}, step=fold_idx)
-
+            fold_data: dict[str, Any] = {"fold": fold_idx, "metrics": metrics}
             if "feature_importance" in result:
-                names = [fi[0] for fi in result["feature_importance"]]
-                importances = [fi[1] for fi in result["feature_importance"]]
-                log_feature_importance(names, importances)
+                fold_data["feature_importance"] = result["feature_importance"]
 
-            model_results.append({"fold": fold_idx, "metrics": metrics})
+            model_results.append(fold_data)
             logger.info(
                 f"  Fold {fold_idx}: accuracy={metrics['accuracy']:.4f}, f1={metrics['f1']:.4f}"
             )
 
-        if model_results:
-            avg_acc = sum(r["metrics"]["accuracy"] for r in model_results) / len(model_results)
-            avg_f1 = sum(r["metrics"]["f1"] for r in model_results) / len(model_results)
-            log_metrics({"avg_accuracy": avg_acc, "avg_f1": avg_f1})
-            logger.info(f"{model_name}: avg accuracy={avg_acc:.4f}, avg f1={avg_f1:.4f}")
-
-        finish_run()
+        avg_acc = (
+            sum(r["metrics"]["accuracy"] for r in model_results) / len(model_results)
+            if model_results
+            else 0.0
+        )
+        avg_f1 = (
+            sum(r["metrics"]["f1"] for r in model_results) / len(model_results)
+            if model_results
+            else 0.0
+        )
+        logger.info(f"{model_name}: avg accuracy={avg_acc:.4f}, avg f1={avg_f1:.4f}")
 
         results[model_key] = {
             "model_name": model_name,
             "folds": model_results,
-            "avg_accuracy": (
-                sum(r["metrics"]["accuracy"] for r in model_results) / len(model_results)
-                if model_results
-                else 0.0
-            ),
-            "avg_f1": (
-                sum(r["metrics"]["f1"] for r in model_results) / len(model_results)
-                if model_results
-                else 0.0
-            ),
+            "avg_accuracy": avg_acc,
+            "avg_f1": avg_f1,
         }
 
+    _upload_to_wandb(results, wandb_project)
+
     return results
+
+
+def _upload_to_wandb(results: dict[str, Any], project: str) -> None:
+    logger.info("Uploading results to wandb...")
+    from src.wandb_logger import (
+        finish_run,
+        init_run,
+        log_feature_importance,
+        log_metrics,
+    )
+
+    for model_key, info in results.items():
+        init_run(project=project, model_name=model_key, config={"model": model_key})
+
+        for fold_data in info["folds"]:
+            fold_idx = fold_data["fold"]
+            metrics = fold_data["metrics"]
+            log_metrics({f"fold_{fold_idx}/{k}": v for k, v in metrics.items()}, step=fold_idx)
+
+            if "feature_importance" in fold_data:
+                fi = fold_data["feature_importance"]
+                log_feature_importance([f[0] for f in fi], [f[1] for f in fi])
+
+        log_metrics({"avg_accuracy": info["avg_accuracy"], "avg_f1": info["avg_f1"]})
+        finish_run()
 
 
 def print_summary(results: dict[str, Any]) -> None:
