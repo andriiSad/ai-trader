@@ -10,7 +10,7 @@ os.environ["WANDB_DISABLE_META"] = "true"
 
 import yaml
 from src.data import download_candles, load_candles
-from src.features import generate_features
+from src.features import generate_from_modules
 from src.labels import generate_labels
 from src.metrics import print_fold_summary
 from src.pipeline import print_summary, run_pipeline
@@ -22,10 +22,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 MODEL_CHOICES = ["lr", "lgbm", "lstm"]
 
 
-def _run_train_lr(df, config):
+def _run_train_lr(df, config, feature_sets, feature_kwargs):
     from src.models.logistic import train_logistic
 
-    feat_df = generate_features(df)
+    feat_df = generate_from_modules(df, feature_sets, **feature_kwargs)
     label_df = generate_labels(df)
     merged = feat_df.merge(label_df, on="timestamp", how="inner")
 
@@ -51,10 +51,10 @@ def _run_train_lr(df, config):
         print(f"\nAverage accuracy across {len(accuracies)} folds: {avg:.4f}")
 
 
-def _run_train_lgbm(df, config):
+def _run_train_lgbm(df, config, feature_sets, feature_kwargs):
     from src.models.lightgbm_model import train_lightgbm
 
-    feat_df = generate_features(df)
+    feat_df = generate_from_modules(df, feature_sets, **feature_kwargs)
     label_df = generate_labels(df)
     merged = feat_df.merge(label_df, on="timestamp", how="inner")
 
@@ -85,10 +85,10 @@ def _run_train_lgbm(df, config):
         print(f"\nAverage accuracy across {len(accuracies)} folds: {avg:.4f}")
 
 
-def _run_train_lstm(df, config):
+def _run_train_lstm(df, config, feature_sets, feature_kwargs):
     from src.models.lstm import train_lstm
 
-    feat_df = generate_features(df)
+    feat_df = generate_from_modules(df, feature_sets, **feature_kwargs)
     label_df = generate_labels(df)
     merged = feat_df.merge(label_df, on="timestamp", how="inner")
 
@@ -128,10 +128,26 @@ def main():
         default=None,
         help="Model to train (default: all)",
     )
+    parser.add_argument(
+        "--feature-set",
+        default=None,
+        help="Comma-separated feature module names (default: from config)",
+    )
     args = parser.parse_args()
 
     with open(args.config) as f:
         config = yaml.safe_load(f)
+
+    feature_sets = (
+        args.feature_set.split(",")
+        if args.feature_set
+        else config.get("feature_sets", ["ohlcv"])
+    )
+    feature_kwargs = {
+        "data_dir": config.get("data_dir", "data"),
+        "interval": config.get("interval", "4h"),
+        "pair": config.get("pair", "BTC_USDT"),
+    }
 
     if args.command == "download":
         pair = config["pair"]
@@ -153,7 +169,7 @@ def main():
         df = load_candles(pair, interval, data_dir)
 
         logging.info("Generating features...")
-        feat_df = generate_features(df)
+        feat_df = generate_from_modules(df, feature_sets, **feature_kwargs)
 
         logging.info("Generating labels...")
         label_df = generate_labels(df)
@@ -178,13 +194,13 @@ def main():
         for m in models_to_run:
             if m == "lr":
                 logging.info("Running walk-forward with Logistic Regression...")
-                _run_train_lr(df, config)
+                _run_train_lr(df, config, feature_sets, feature_kwargs)
             elif m == "lstm":
                 logging.info("Running walk-forward with LSTM...")
-                _run_train_lstm(df, config)
+                _run_train_lstm(df, config, feature_sets, feature_kwargs)
             elif m == "lgbm":
                 logging.info("Running walk-forward with LightGBM...")
-                _run_train_lgbm(df, config)
+                _run_train_lgbm(df, config, feature_sets, feature_kwargs)
 
     elif args.command == "run":
         pair = config["pair"]
@@ -195,7 +211,7 @@ def main():
         df = load_candles(pair, interval, data_dir)
 
         logging.info("Generating features...")
-        feat_df = generate_features(df)
+        feat_df = generate_from_modules(df, feature_sets, **feature_kwargs)
         logging.info("Generating labels...")
         label_df = generate_labels(df)
         merged = feat_df.merge(label_df, on="timestamp", how="inner")

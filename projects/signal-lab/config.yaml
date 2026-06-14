@@ -2,3 +2,5 @@ pair: BTC_USDT
 interval: 4h
 start_date: null
 data_dir: data
+feature_sets:
+  - ohlcv

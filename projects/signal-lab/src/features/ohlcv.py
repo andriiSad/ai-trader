@@ -86,7 +86,7 @@ FEATURE_FUNCS = {
 }
 
 
-def generate_features(df: pd.DataFrame) -> pd.DataFrame:
+def generate(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
     result = df[["timestamp"]].copy()
     for name, func in FEATURE_FUNCS.items():
         result[name] = func(df)
