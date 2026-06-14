@@ -213,12 +213,8 @@ def generate_features(df: pd.DataFrame) -> pd.DataFrame:
     if "pair" in df.columns:
         meta_cols.append("pair")
 
-    if meta_cols:
-        result = pd.concat(
-            [df[meta_cols].reset_index(drop=True), features_df.reset_index(drop=True)], axis=1
-        )
-    else:
-        result = features_df.copy()
+    result = pd.concat([df[meta_cols], features_df], axis=1) if meta_cols else features_df.copy()
 
-    result = result.dropna().reset_index(drop=True)
+    result = result.replace([np.inf, -np.inf], np.nan)
+    result = result.dropna()
     return result

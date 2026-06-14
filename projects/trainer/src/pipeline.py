@@ -37,9 +37,8 @@ def run_features(config: dict) -> pd.DataFrame:
         df["pair"] = pair
         labels = generate_labels(df, horizon=horizon, threshold=threshold)
         featured = generate_features(df)
-        n_dropped = len(df) - len(featured)
-        featured["label"] = labels.iloc[n_dropped:].reset_index(drop=True).values
-        featured = featured.dropna(subset=["label"]).reset_index(drop=True)
+        featured["label"] = labels.reindex(featured.index).values
+        featured = featured.dropna(subset=["label"])
         frames.append(featured)
 
     if not frames:
