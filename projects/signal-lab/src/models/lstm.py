@@ -50,6 +50,7 @@ def train_lstm(
     val_split: float = 0.2,
 ) -> dict:
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    logger.info(f"    LSTM: device={device}, creating sequences...")
 
     X_train_seq, y_train_seq = create_sequences(X_train, y_train, seq_len)
     X_test_seq, y_test_seq = create_sequences(X_test, y_test, seq_len)
@@ -57,6 +58,8 @@ def train_lstm(
     n_val = max(1, int(len(X_train_seq) * val_split))
     X_val_seq, y_val_seq = X_train_seq[-n_val:], y_train_seq[-n_val:]
     X_train_seq, y_train_seq = X_train_seq[:-n_val], y_train_seq[:-n_val]
+
+    logger.info(f"    LSTM: train={len(X_train_seq)}, val={len(X_val_seq)}, test={len(X_test_seq)}")
 
     train_ds = TensorDataset(
         torch.tensor(X_train_seq, dtype=torch.float32),
@@ -75,12 +78,11 @@ def train_lstm(
     val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False)
 
+    logger.info("    LSTM: initializing model...")
     model = LSTMModel(input_size=X_train.shape[1], hidden_size=hidden_size).to(device)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-    logger.info(f"    LSTM: device={device}, train_samples={len(X_train_seq)}, "
-                f"val_samples={len(X_val_seq)}, test_samples={len(X_test_seq)}")
+    logger.info("    LSTM: model ready, starting training...")
 
     best_val_loss = float("inf")
     patience_counter = 0
