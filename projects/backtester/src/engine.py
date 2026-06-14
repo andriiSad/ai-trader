@@ -69,7 +69,14 @@ class BacktestEngine:
                         candle["close"], signal, portfolio_value, candle["timestamp"]
                     )
 
-            equity_values.append(portfolio_value)
+            unrealized = 0.0
+            if current_position is not None:
+                unrealized = (
+                    current_position.direction
+                    * (candle["close"] - current_position.entry_price)
+                    * current_position.quantity
+                )
+            equity_values.append(portfolio_value + unrealized)
 
         if current_position is not None:
             last_candle = merged.iloc[-1]

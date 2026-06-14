@@ -45,14 +45,21 @@ def run_backtest(config: dict) -> dict:
         fold_results = engine.run_walk_forward(pair_preds, pair_candles)
 
         per_fold = []
-        for result in fold_results:
-            metrics = compute_all_metrics(result.equity_curve, result.trade_log, initial_capital)
+        for i, result in enumerate(fold_results):
+            fold_initial = initial_capital if i == 0 else fold_results[i - 1].final_value
+            metrics = compute_all_metrics(result.equity_curve, result.trade_log, fold_initial)
             metrics["fold_id"] = result.fold_id
             metrics["fold_start"] = str(result.fold_start)
             metrics["fold_end"] = str(result.fold_end)
             per_fold.append(metrics)
 
-        combined_equity = pd.concat([r.equity_curve for r in fold_results])
+        chained_curves = []
+        cumulative_offset = 0.0
+        for i, result in enumerate(fold_results):
+            if i > 0:
+                cumulative_offset += result.equity_curve.iloc[0] - initial_capital
+            chained_curves.append(result.equity_curve - cumulative_offset)
+        combined_equity = pd.concat(chained_curves)
         combined_trades = [t for r in fold_results for t in r.trade_log]
         combined_metrics = compute_all_metrics(combined_equity, combined_trades, initial_capital)
 
