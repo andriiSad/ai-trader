@@ -33,34 +33,20 @@ def log_metrics(metrics: dict[str, Any], step: int | None = None) -> None:
     try:
         import wandb
 
-        log_dict: dict[str, Any] = {}
-        for key in ("accuracy", "f1", "precision", "recall", "loss"):
-            if key in metrics:
-                log_dict[key] = metrics[key]
-
-        if "confusion_matrix" in metrics:
-            cm = metrics["confusion_matrix"]
-            log_dict["confusion_matrix"] = wandb.Table(
-                columns=["predicted_0", "predicted_1"],
-                data=cm,
-            )
-
-        wandb.log(log_dict, step=step)
+        wandb.log(metrics, step=step)
     except Exception as e:
         logger.warning(f"wandb log_metrics failed (no-op): {e}")
 
 
-def log_artifact(
-    name: str, artifact_type: str, path: str, metadata: dict[str, Any] | None = None
-) -> None:
+def log_confusion_matrix(y_true, y_pred, fold_idx: int) -> None:
     try:
         import wandb
 
-        artifact = wandb.Artifact(name=name, type=artifact_type, metadata=metadata or {})
-        artifact.add_file(path)
-        wandb.log_artifact(artifact)
-    except Exception as e:
-        logger.warning(f"wandb log_artifact failed (no-op): {e}")
+        import numpy as np
+        cm = np.array(wandb.confusion_matrix(y_true=y_true, preds=y_pred))
+        wandb.log({f"confusion_matrix_fold_{fold_idx}": cm}, step=fold_idx)
+    except Exception:
+        pass
 
 
 def log_feature_importance(feature_names: list[str], importances: list[float]) -> None:

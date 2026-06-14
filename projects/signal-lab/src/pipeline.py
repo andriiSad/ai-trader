@@ -108,19 +108,58 @@ def _upload_to_wandb(results: dict[str, Any], project: str) -> None:
     )
 
     for model_key, info in results.items():
-        init_run(project=project, model_name=model_key, config={"model": model_key})
+        init_run(
+            project=project,
+            model_name=model_key,
+            config={
+                "model": model_key,
+                "avg_accuracy": info["avg_accuracy"],
+                "avg_f1": info["avg_f1"],
+                "n_folds": len(info["folds"]),
+            },
+        )
 
         for fold_data in info["folds"]:
             fold_idx = fold_data["fold"]
             metrics = fold_data["metrics"]
-            log_metrics({f"fold_{fold_idx}/{k}": v for k, v in metrics.items()}, step=fold_idx)
+            log_metrics({
+                "fold": fold_idx,
+                "accuracy": metrics["accuracy"],
+                "f1": metrics["f1"],
+                "precision": metrics["precision"],
+                "recall": metrics["recall"],
+            }, step=fold_idx)
 
             if "feature_importance" in fold_data:
                 fi = fold_data["feature_importance"]
                 log_feature_importance([f[0] for f in fi], [f[1] for f in fi])
 
-        log_metrics({"avg_accuracy": info["avg_accuracy"], "avg_f1": info["avg_f1"]})
+        log_metrics({
+            "avg_accuracy": info["avg_accuracy"],
+            "avg_f1": info["avg_f1"],
+        })
         finish_run()
+
+    _upload_comparison_table(results, project)
+
+
+def _upload_comparison_table(results: dict[str, Any], project: str) -> None:
+    try:
+        import wandb
+
+        run = wandb.init(project=project, name="model-comparison",
+                         settings=wandb.Settings(_disable_stats=True, _disable_meta=True))
+        columns = ["Model", "Avg Accuracy", "Avg F1", "Folds"]
+        data = []
+        for _key, info in results.items():
+            data.append([info["model_name"], info["avg_accuracy"], info["avg_f1"], len(info["folds"])])
+        table = wandb.Table(columns=columns, data=data)
+        wandb.log({"model_comparison": table})
+        wandb.log({"accuracy_chart": wandb.plot.bar(table, "Model", "Avg Accuracy", title="Accuracy by Model")})
+        wandb.log({"f1_chart": wandb.plot.bar(table, "Model", "Avg F1", title="F1 by Model")})
+        wandb.finish()
+    except Exception as e:
+        logger.warning(f"wandb comparison table failed: {e}")
 
 
 def print_summary(results: dict[str, Any]) -> None:
